@@ -1,0 +1,10 @@
+.babelrc
+.editorconfig
+.esdoc.json
+.travis.yml
+yarn.lock
+node_modules/
+src/
+types/*
+!types/index.d.ts
+src/**/*.test.ts

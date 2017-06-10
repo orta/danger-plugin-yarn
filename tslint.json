@@ -1,0 +1,32 @@
+{
+  "extends": [
+    "tslint:recommended"
+  ],
+  "rules": {
+    "arrow-parens": false,
+    "interface-name": [
+      true,
+      "never-prefix"
+    ],
+    "max-classes-per-file": [
+      false
+    ],
+    "member-access": [
+      false,
+      "check-accessor",
+      "check-constructor"
+    ],
+    "object-literal-sort-keys": false,
+    "semicolon": [
+      true,
+      "never",
+      "ignore-interfaces",
+      "ignore-bound-class-methods"
+    ],
+    "switch-default": false,
+    "trailing-comma": [
+      true,
+      { "multiline": "always", "singleline": "never" }
+    ]
+  }
+}
