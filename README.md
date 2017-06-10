@@ -23,6 +23,15 @@ import yarn from 'danger-plugin-yarn'
 schedule(yarn())
 ```
 
+Provides 4 separate rules:
+
+* `checkForRelease` - Provides a 🎉 when there's a package version bump. 
+* `checkForNewDependencies` (async) - Provides npmjs.com and `yarn why` metadata about new dependencies.
+* `checkForLockfileDiff` - Will warn you when there are `dependencies` or  `devDependencies` changes without a `yarn.lock` change.
+* `checkForTypesInDeps` - Will fail the build if you add any `@types/[x]` to `dependencies` instead of `devDependencies`.
+
+And exports a default function to handle all of them at once.
+
 Note: The function has be to `schedule`'d by Danger.
 
 ## Changelog
