@@ -1,6 +1,6 @@
 {
   "name": "danger-plugin-yarn",
-  "description": "asdasd",
+  "description": "Provides dependency information on dependency changes in a PR",
   "author": {
     "name": "Orta Therox",
     "email": "orta.therox@gmail.com"
@@ -16,7 +16,7 @@
   "keywords": [
     "danger",
     "danger-plugin",
-    ""
+    "yarn"
   ],
   "version": "0.1.1",
   "main": "dist/index.js",

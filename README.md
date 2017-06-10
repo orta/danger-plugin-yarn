@@ -20,9 +20,11 @@ At a glance:
 // dangerfile.js
 import yarn from 'danger-plugin-yarn'
 
-schedule(yarn)
-
+schedule(yarn())
 ```
+
+Note: The function has be to `schedule`'d by Danger.
+
 ## Changelog
 
 See the GitHub [release history](https://github.com/orta/danger-plugin-yarn/releases).
