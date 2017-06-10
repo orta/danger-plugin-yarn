@@ -111,6 +111,7 @@ export const getNPMMetadataForDep = async dep => {
         name: "Releases",
         message: String(Object.keys(npm.versions).length),
       })
+
       if (tag.dependencies) {
         const deps = Object.keys(tag.dependencies)
         const depLinks = deps.map(d => `<a href='http: //npmjs.com/package/${d}'>${d}</a>`)
@@ -188,7 +189,11 @@ export default async function yarn(pathToPackageJSON) {
   const packageDiff = await danger.git.JSONDiffForFile(path)
 
   checkForRelease(packageDiff)
-  await checkForNewDependencies(packageDiff)
   checkForLockfileDiff(packageDiff)
   checkForTypesInDeps(packageDiff)
+
+  console.log("checking for deps")
+  console.log(JSON.stringify(packageDiff, null, "  "))
+
+  await checkForNewDependencies(packageDiff)
 }
