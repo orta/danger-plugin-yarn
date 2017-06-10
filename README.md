@@ -32,7 +32,7 @@ Provides 4 separate rules:
 
 And exports a default function to handle all of them at once.
 
-Note: The function has be to `schedule`'d by Danger.
+Note: async functions like the default one [have be to](http://danger.systems/js/guides/the_dangerfile.html#async) `schedule`'d by Danger.
 
 ## Changelog
 

@@ -1,4 +1,18 @@
-import yarn, { checkForLockfileDiff, checkForNewDependencies, checkForRelease, checkForTypesInDeps } from "./index"
+import * as mockfs from "fs"
+jest.mock("node-fetch", () => () =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
+  }),
+)
+
+import yarn, {
+  checkForLockfileDiff,
+  checkForNewDependencies,
+  checkForRelease,
+  checkForTypesInDeps,
+  getNPMMetadataForDep,
+} from "./index"
 
 declare const global: any
 beforeEach(() => {
@@ -6,7 +20,7 @@ beforeEach(() => {
   global.message = jest.fn()
   global.fail = jest.fn()
   global.markdown = jest.fn()
-  global.danger = { utils: { sentence: jest.fn() }}
+  global.danger = { utils: { sentence: jest.fn() } }
 })
 
 afterEach(() => {
@@ -18,7 +32,7 @@ afterEach(() => {
 
 describe("checkForRelease", () => {
   it("Says congrats if there is a package diff version change", () => {
-    checkForRelease({ version: {}})
+    checkForRelease({ version: {} })
     expect(global.markdown).toHaveBeenCalledWith(":tada:")
   })
 
@@ -30,7 +44,7 @@ describe("checkForRelease", () => {
 
 describe("checkForTypesInDeps", () => {
   it("does nothing when there's no dependency changes", () => {
-    checkForTypesInDeps( {} )
+    checkForTypesInDeps({})
     expect(global.fail).toHaveBeenCalledTimes(0)
   })
 
@@ -47,12 +61,12 @@ describe("checkForTypesInDeps", () => {
 
 describe("checkForLockfileDiff", () => {
   it("does nothing when there's no dependency changes", () => {
-    checkForLockfileDiff( {} )
+    checkForLockfileDiff({})
     expect(global.warn).toHaveBeenCalledTimes(0)
   })
 
   it("when there are dependency changes, and no lockfile in modified - warn", () => {
-    global.danger = { git: { modified_files: [] }}
+    global.danger = { git: { modified_files: [] } }
     const deps = {
       dependencies: {},
     }
@@ -61,9 +75,16 @@ describe("checkForLockfileDiff", () => {
   })
 
   it("when there are dependency changes, and a lockfile in modified - do not warn", () => {
-    global.danger = { git: { modified_files: ["yarn.lock"] }}
+    global.danger = { git: { modified_files: ["yarn.lock"] } }
     const deps = { dependencies: {} }
     checkForLockfileDiff(deps)
     expect(global.warn).toHaveBeenCalledTimes(0)
+  })
+})
+
+describe("npm metadata", () => {
+  it("Shows a bunch of useful text for a new dep", async () => {
+    const data = await getNPMMetadataForDep("danger")
+    expect(data).toMatchSnapshot()
   })
 })
