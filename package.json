@@ -18,7 +18,7 @@
     "danger-plugin",
     ""
   ],
-  "version": "0.0.0-development",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
   "scripts": {
@@ -38,6 +38,11 @@
   "license": "MIT",
   "engines": {
     "node": ">=4.0.0"
+  },
+  "dependencies": {
+    "date-fns": "^1.28.5",
+    "lodash.includes": "^4.3.0",
+    "node-fetch": "^1.7.1"
   },
   "devDependencies": {
     "@types/jest": "^19.2.4",
@@ -84,9 +89,5 @@
       "\\.snap$",
       "<rootDir>/node_modules/"
     ]
-  },
-  "dependencies": {
-    "date-fns": "^1.28.5",
-    "lodash.includes": "^4.3.0"
   }
 }

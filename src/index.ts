@@ -8,11 +8,10 @@ export declare function markdown(message: string): void
 
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
+import * as fetch from "node-fetch"
 
 import * as includesOriginal from "lodash.includes"
 const includes = includesOriginal as any
-
-const sentence = danger.utils.sentence
 
 // Celebrate when a new release is being shipped
 export const checkForRelease = packageDiff => {
@@ -25,6 +24,8 @@ export const checkForRelease = packageDiff => {
 // Just starting simple by showing `yarn why {dep}` for now
 
 export const checkForNewDependencies = async packageDiff => {
+  const sentence = danger.utils.sentence
+
   if (packageDiff.dependencies) {
     if (packageDiff.dependencies.added.length) {
       const newDependencies = packageDiff.dependencies.added
@@ -145,7 +146,6 @@ ${readme}
 
 // Ensure a lockfile change if deps/devDeps changes, in case
 // someone has only used `npm install` instead of `yarn.
-
 export const checkForLockfileDiff = packageDiff => {
   if (packageDiff.dependencies || packageDiff.devDependencies) {
     const lockfileChanged = includes(danger.git.modified_files, "yarn.lock")
@@ -158,7 +158,9 @@ export const checkForLockfileDiff = packageDiff => {
 }
 
 // Don't ship @types dependencies to consumers of Danger
-export const checkForTypesInDeps = packageDiff => {
+export const checkForTypesInDeps = (packageDiff) => {
+  const sentence = danger.utils.sentence
+
   if (packageDiff.dependencies) {
     const typesDeps = packageDiff.dependencies.added.filter(dep => dep.startsWith("@types"))
     if (typesDeps.length) {

@@ -20,7 +20,8 @@ At a glance:
 // dangerfile.js
 import yarn from 'danger-plugin-yarn'
 
-yarn()
+schedule(yarn)
+
 ```
 ## Changelog
 

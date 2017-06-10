@@ -7,5 +7,6 @@
         "**/.git": true,
         "**/dist": true,
         "**/node_modules": true
-    }
+    },
+    "editor.formatOnSave": false
 }

@@ -1,31 +1,69 @@
-import yarn from "./index"
+import yarn, { checkForLockfileDiff, checkForNewDependencies, checkForRelease, checkForTypesInDeps } from "./index"
 
 declare const global: any
+beforeEach(() => {
+  global.warn = jest.fn()
+  global.message = jest.fn()
+  global.fail = jest.fn()
+  global.markdown = jest.fn()
+  global.danger = { utils: { sentence: jest.fn() }}
+})
 
-describe("yarn()", () => {
-  beforeEach(() => {
-    global.warn = jest.fn()
-    global.message = jest.fn()
-    global.fail = jest.fn()
-    global.markdown = jest.fn()
+afterEach(() => {
+  global.warn = undefined
+  global.message = undefined
+  global.fail = undefined
+  global.markdown = undefined
+})
+
+describe("checkForRelease", () => {
+  it("Says congrats if there is a package diff version change", () => {
+    checkForRelease({ version: {}})
+    expect(global.markdown).toHaveBeenCalledWith(":tada:")
   })
 
-  afterEach(() => {
-    global.warn = undefined
-    global.message = undefined
-    global.fail = undefined
-    global.markdown = undefined
+  it("does nothing when there's no version change", () => {
+    checkForRelease({})
+    expect(global.markdown).toHaveBeenCalledTimes(0)
+  })
+})
+
+describe("checkForTypesInDeps", () => {
+  it("does nothing when there's no dependency changes", () => {
+    checkForTypesInDeps( {} )
+    expect(global.fail).toHaveBeenCalledTimes(0)
   })
 
-  it("Checks for a that message has been called", () => {
-    global.danger = {
-      github: { pr: { title: "My Test Title" } },
+  it("when there is an @types dependency, it should call fail", () => {
+    const deps = {
+      dependencies: {
+        added: ["@types/danger"],
+      },
     }
+    checkForTypesInDeps(deps)
+    expect(global.fail).toHaveBeenCalledTimes(1)
+  })
+})
 
-    // yarn()
+describe("checkForLockfileDiff", () => {
+  it("does nothing when there's no dependency changes", () => {
+    checkForLockfileDiff( {} )
+    expect(global.warn).toHaveBeenCalledTimes(0)
+  })
 
-    expect(global.message).toHaveBeenCalledWith(
-      "PR Title: My Test Title",
-    )
+  it("when there are dependency changes, and no lockfile in modified - warn", () => {
+    global.danger = { git: { modified_files: [] }}
+    const deps = {
+      dependencies: {},
+    }
+    checkForLockfileDiff(deps)
+    expect(global.warn).toHaveBeenCalledTimes(1)
+  })
+
+  it("when there are dependency changes, and a lockfile in modified - do not warn", () => {
+    global.danger = { git: { modified_files: ["yarn.lock"] }}
+    const deps = { dependencies: {} }
+    checkForLockfileDiff(deps)
+    expect(global.warn).toHaveBeenCalledTimes(0)
   })
 })
