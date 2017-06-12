@@ -185,6 +185,8 @@ export const checkForTypesInDeps = packageDiff => {
  * Provides dependency information on dependency changes in a PR
  */
 export default async function yarn(pathToPackageJSON) {
+  message("Checking")
+
   const path = pathToPackageJSON ? pathToPackageJSON : "package.json"
   const packageDiff = await danger.git.JSONDiffForFile(path)
 
@@ -192,8 +194,8 @@ export default async function yarn(pathToPackageJSON) {
   checkForLockfileDiff(packageDiff)
   checkForTypesInDeps(packageDiff)
 
-  console.log("checking for deps")
-  console.log(JSON.stringify(packageDiff, null, "  "))
+  message("checking for deps")
+  message(JSON.stringify(packageDiff, null, "  "))
 
   await checkForNewDependencies(packageDiff)
 }
