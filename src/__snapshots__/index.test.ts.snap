@@ -3,12 +3,13 @@
 exports[`npm metadata Shows a bunch of useful text for a new dep 1`] = `
 "
 <h2><a href=\\"https://github.com/danger/danger-js#readme\\">danger</a></h2>
-Author: Orta Therox
-Description: Unit tests for Team Culture
-Repo: https://github.com/danger/danger-js#readme
+<p>Author: Orta Therox</p>
+<p>Description: Unit tests for Team Culture</p>
+<p>Homepage: <a href=\\"https://github.com/danger/danger-js#readme\\">https://github.com/danger/danger-js#readme</a></p>
+
 <table>
   <thead><tr><th></th><th width=\\"100%\\"></th></tr></thead>
-  <tr><td>Created</td><td>about 1 year ago</td></tr><tr><td>Last Updated</td><td>1 day ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
+  <tr><td>Created</td><td>about 1 year ago</td></tr><tr><td>Last Updated</td><td>3 days ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
 </table>
 
 <details>

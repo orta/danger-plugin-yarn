@@ -18,7 +18,7 @@
     "danger-plugin",
     "yarn"
   ],
-  "version": "0.2.5",
+  "version": "0.2.10",
   "main": "dist/index.js",
   "types": "types/index.d.ts",
   "scripts": {
@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "date-fns": "^1.28.5",
+    "lodash.flatten": "^4.4.0",
     "lodash.includes": "^4.3.0",
     "node-fetch": "^1.7.1"
   },

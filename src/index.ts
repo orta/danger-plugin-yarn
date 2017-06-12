@@ -24,20 +24,28 @@ export const checkForRelease = packageDiff => {
 export const checkForNewDependencies = async packageDiff => {
   const sentence = danger.utils.sentence
 
-  markdown(JSON.stringify(packageDiff.dependencies, null, "  "))
+  for (const element of [packageDiff.dependencies, packageDiff.devDependencies]) {
+    if (element) {
+      if (element.added.length) {
+        const newDependencies = element.added
+        warn(`New dependencies added: ${sentence(newDependencies)}.`)
 
-  if (packageDiff.dependencies) {
-    if (packageDiff.dependencies.added.length) {
-      const newDependencies = packageDiff.dependencies.added
-      warn(`New dependencies added: ${sentence(newDependencies)}.`)
+        for (const dep of newDependencies){
+          // Pump out a bunch of metadata information
+          const npm = await getNPMMetadataForDep(dep)
+          if (npm && npm.length) {
+            markdown(npm)
+          } else {
+            warn(`Could not get info from npm on ${dep}`)
+          }
 
-      for (const dep of newDependencies) {
-        // Pump out a bunch of metadata information
-        const npm = await getNPMMetadataForDep(dep)
-        if (npm && npm.length) { markdown(npm) }
-
-        const yarn = await getYarnMetadataForDep(dep)
-        if (yarn && yarn.length) { markdown(yarn) }
+          const yarn = await getYarnMetadataForDep(dep)
+          if (yarn && yarn.length) {
+            markdown(yarn)
+          } else {
+            warn(`Could not get info from yarn on ${dep}`)
+          }
+        }
       }
     }
   }
@@ -143,9 +151,10 @@ ${npm.readme}
 
     return `
 <h2><a href="${homepage}">${dep}</a></h2>
-Author: ${npm.author && npm.author.name ? npm.author.name : "Unknown"}
-Description: ${npm.description}
-Repo: ${homepage}
+<p>Author: ${npm.author && npm.author.name ? npm.author.name : "Unknown"}</p>
+<p>Description: ${npm.description}</p>
+<p>Homepage: <a href="${homepage}">${homepage}</a></p>
+
 <table>
   <thead><tr><th></th><th width="100%"></th></tr></thead>
   ${tableDeets.map(deet => `<tr><td>${deet.name}</td><td>${deet.message}</td></tr>`).join("")}
@@ -185,17 +194,12 @@ export const checkForTypesInDeps = packageDiff => {
  * Provides dependency information on dependency changes in a PR
  */
 export default async function yarn(pathToPackageJSON) {
-  message("Checking")
-
   const path = pathToPackageJSON ? pathToPackageJSON : "package.json"
   const packageDiff = await danger.git.JSONDiffForFile(path)
 
   checkForRelease(packageDiff)
   checkForLockfileDiff(packageDiff)
   checkForTypesInDeps(packageDiff)
-
-  message("checking for deps")
-  message(JSON.stringify(packageDiff, null, "  "))
 
   await checkForNewDependencies(packageDiff)
 }
