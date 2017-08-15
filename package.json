@@ -18,9 +18,8 @@
     "danger-plugin",
     "yarn"
   ],
-  "version": "0.2.10",
+  "version": "0.3.0",
   "main": "dist/index.js",
-  "types": "types/index.d.ts",
   "scripts": {
     "precommit": "lint-staged",
     "commit": "git-cz",
