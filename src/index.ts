@@ -147,7 +147,7 @@ ${npm.readme}
 `
     }
 
-    const homepage = npm.homepage ? npm.homepage : `http: //npmjs.com/package/${dep}`
+    const homepage = npm.homepage ? npm.homepage : `http://npmjs.com/package/${dep}`
 
     return `
 <h2><a href="${homepage}">${dep}</a></h2>
