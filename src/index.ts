@@ -81,7 +81,8 @@ export const getYarnMetadataForDep = async dep => {
 
 export const getNPMMetadataForDep = async dep => {
   const sentence = danger.utils.sentence
-  const npmResponse = await fetch(`https://registry.npmjs.org/${dep}`, {})
+  const urlDep = encodeURIComponent(dep)
+  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, {})
 
   if (npmResponse.ok) {
     const tableDeets = [] as Array<{ name: string; message: string }>
