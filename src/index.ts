@@ -39,11 +39,15 @@ export const checkForNewDependencies = async packageDiff => {
             warn(`Could not get info from npm on ${dep}`)
           }
 
-          const yarn = await getYarnMetadataForDep(dep)
-          if (yarn && yarn.length) {
-            markdown(yarn)
-          } else {
-            warn(`Could not get info from yarn on ${dep}`)
+          // This isn't a gerat way to check, maybe peril should be something you
+          // can 'pull' out of the danger import?
+          if (!process.env.PERIL_BOT_USER_ID) {
+            const yarn = await getYarnMetadataForDep(dep)
+            if (yarn && yarn.length) {
+              markdown(yarn)
+            } else {
+              warn(`Could not get info from yarn on ${dep}`)
+            }
           }
         }
       }
@@ -193,7 +197,7 @@ export const checkForTypesInDeps = packageDiff => {
 /**
  * Provides dependency information on dependency changes in a PR
  */
-export default async function yarn(pathToPackageJSON) {
+export default async function yarn(pathToPackageJSON?: string) {
   const path = pathToPackageJSON ? pathToPackageJSON : "package.json"
   const packageDiff = await danger.git.JSONDiffForFile(path)
 
