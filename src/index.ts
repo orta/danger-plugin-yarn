@@ -210,9 +210,14 @@ export const getNPMMetadataForDep = async (
       tableDeets.push({ name: "License", message: license })
     } else {
       // License is important, so always show info
+      const { versions = {} } = npm
+      const licenses = Object.keys(versions)
+        .sort((a, b) => (semver.gte(b, a) ? 1 : 0)) // sort latest versions first
+        .map(version => versions[version].license) // get the license
+        .filter(Boolean) // remove falsy values
       tableDeets.push({
         name: "License",
-        message: "<b>NO LICENSE FOUND</b>",
+        message: `<b>${licenses[0] || "NO LICENSE FOUND"}</b>`,
       })
     }
     // Right
