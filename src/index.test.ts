@@ -1,18 +1,6 @@
 import * as mockfs from "fs"
-jest.mock("node-fetch", () => () =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
-  }),
-)
 
-import yarn, {
-  checkForLockfileDiff,
-  checkForNewDependencies,
-  checkForRelease,
-  checkForTypesInDeps,
-  getNPMMetadataForDep,
-} from "./index"
+import yarn, { checkForLockfileDiff, checkForNewDependencies, checkForRelease, checkForTypesInDeps } from "./index"
 
 declare const global: any
 beforeEach(() => {
@@ -84,7 +72,25 @@ describe("checkForLockfileDiff", () => {
 
 describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
+    jest.mock("node-fetch", () => () =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
+      })
+    )
+    const { getNPMMetadataForDep } = require("./")
     const data = await getNPMMetadataForDep("danger")
+    expect(data).toMatchSnapshot()
+  })
+  it("looks through versions if license is missing", async () => {
+    jest.mock("node-fetch", () => () =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/pinpoint-npm-info.json", "utf8"))),
+      })
+    )
+    const { getNPMMetadataForDep } = require("./")
+    const data = await getNPMMetadataForDep("pinpoint")
     expect(data).toMatchSnapshot()
   })
 })

@@ -1,0 +1,135 @@
+{
+  "_attachments": {},
+  "_id": "pinpoint",
+  "_rev": "5-25a718426e3c3e3763b7a8f85b9fe65b",
+  "author": {
+      "email": "curvedmark@gmail.com",
+      "name": "Glen Huang"
+  },
+  "description": "Display an arrow in a string of code to point to a location",
+  "dist-tags": {
+      "latest": "1.1.0"
+  },
+  "maintainers": [
+      {
+          "email": "curvedmark@gmail.com",
+          "name": "curvedmark"
+      }
+  ],
+  "name": "pinpoint",
+  "readme": "# pinpoint\n\nAdd line numbers and an arrow to a string of code that points to a specific location.\n\n## Installation\n\n\tnpm install pinpoint\n\n## Example\n\nWith this code:\n\n```javascript\nfunction add(left, right) {\n  return left + right;\n}\n\nconsole.log(add(1 + 1));\n```\n\nWhen being asked to point to line 2 and column 2, generates this:\n\n```javascript\n1| function add(left, right) {\n2|   return left + right;\n-----^\n3| }\n4|\n5| console.log(add(1 + 1));\n```\n## API\n\n```javascript\nvar pinpoint = require('pinpoint');\n\nvar str = pinpoint(code, options);\n```\n\n* `code` - a string of code\n* `options` - an object literal supports these options:\n\t* `line` - the line number to point to, 1-based.\n\t* `column` - the column number to point to, 1-based.\n\t* `showLines` - the number of lines to show. The pointed line will try to stay in the middle of the displays lines.\n\t* `indent` - indent string prepend to each line, before the line number.",
+  "repository": {
+      "type": "git",
+      "url": "git://github.com/curvedmark/pinpoint.git"
+  },
+  "time": {
+      "1.0.0": "2013-08-19T09:30:51.336Z",
+      "1.1.0": "2013-09-21T09:56:46.195Z",
+      "created": "2013-08-19T09:30:46.479Z",
+      "modified": "2013-09-21T09:56:46.195Z"
+  },
+  "versions": {
+      "1.0.0": {
+          "_from": ".",
+          "_id": "pinpoint@1.0.0",
+          "_npmUser": {
+              "email": "curvedmark@gmail.com",
+              "name": "curvedmark"
+          },
+          "_npmVersion": "1.3.5",
+          "author": {
+              "email": "curvedmark@gmail.com",
+              "name": "Glen Huang"
+          },
+          "bugs": {
+              "url": "https://github.com/curvedmark/pinpoint/issues"
+          },
+          "description": "Display an arrow in a string of code to point to a location",
+          "devDependencies": {
+              "coffee-script": "1.x",
+              "mocha": "1.x"
+          },
+          "directories": {
+              "lib": "lib",
+              "test": "test"
+          },
+          "dist": {
+              "shasum": "11469494e0b14816e2fbebdd88ae189ac1a97288",
+              "tarball": "https://registry.npmjs.org/pinpoint/-/pinpoint-1.0.0.tgz"
+          },
+          "keywords": [
+              "editor"
+          ],
+          "license": "MIT",
+          "main": "lib/pinpoint.js",
+          "maintainers": [
+              {
+                  "email": "curvedmark@gmail.com",
+                  "name": "curvedmark"
+              }
+          ],
+          "name": "pinpoint",
+          "readme": "# pinpoint\n\nAdd line numbers and an arrow to a string of code that points to a specific location.\n\n## Installation\n\n\tnpm install pinpoint\n\n## Example\n\nWith this code:\n\n```javascript\nfunction add(left, right) {\n  return left + right;\n}\n\nconsole.log(add(1 + 1));\n```\n\nWhen being asked to point to line 2 and column 2, generates this:\n\n```javascript\n1| function add(left, right) {\n2|   return left + right;\n-----^\n3| }\n4|\n5| console.log(add(1 + 1));\n```\n## API\n\n```javascript\nvar pinpoint = require('pinpoint');\n\nvar str = pinpoint(code, options);\n```\n\n* `code` - a string of code\n* `options` - an object literal supports these options:\n\t* `line` - the line number to point to, 1-based.\n\t* `column` - the column number to point to, 1-based.\n\t* `showLines` - the number of lines to show. The pointed line will try to stay in the middle of the displays lines.\n\t* `indent` - indent string prepend to each line, before the line number.",
+          "readmeFilename": "README.md",
+          "repository": {
+              "type": "git",
+              "url": "git://github.com/curvedmark/pinpoint.git"
+          },
+          "scripts": {
+              "test": "mocha --bail --compilers coffee:coffee-script --ui qunit"
+          },
+          "version": "1.0.0"
+      },
+      "1.1.0": {
+          "_from": ".",
+          "_id": "pinpoint@1.1.0",
+          "_npmUser": {
+              "email": "curvedmark@gmail.com",
+              "name": "curvedmark"
+          },
+          "_npmVersion": "1.3.8",
+          "author": {
+              "email": "curvedmark@gmail.com",
+              "name": "Glen Huang"
+          },
+          "bugs": {
+              "url": "https://github.com/curvedmark/pinpoint/issues"
+          },
+          "description": "Display an arrow in a string of code to point to a location",
+          "devDependencies": {
+              "coffee-script": "1.x",
+              "mocha": "1.x"
+          },
+          "directories": {
+              "lib": "lib",
+              "test": "test"
+          },
+          "dist": {
+              "shasum": "0cf7757a6977f1bf7f6a32207b709e377388e874",
+              "tarball": "https://registry.npmjs.org/pinpoint/-/pinpoint-1.1.0.tgz"
+          },
+          "keywords": [
+              "editor"
+          ],
+          "license": "MIT",
+          "main": "lib/pinpoint.js",
+          "maintainers": [
+              {
+                  "email": "curvedmark@gmail.com",
+                  "name": "curvedmark"
+              }
+          ],
+          "name": "pinpoint",
+          "readme": "# pinpoint\n\nAdd line numbers and an arrow to a string of code that points to a specific location.\n\n## Installation\n\n\tnpm install pinpoint\n\n## Example\n\nWith this code:\n\n```javascript\nfunction add(left, right) {\n  return left + right;\n}\n\nconsole.log(add(1 + 1));\n```\n\nWhen being asked to point to line 2 and column 2, generates this:\n\n```javascript\n1| function add(left, right) {\n2|   return left + right;\n-----^\n3| }\n4|\n5| console.log(add(1 + 1));\n```\n## API\n\n```javascript\nvar pinpoint = require('pinpoint');\n\nvar str = pinpoint(code, options);\n```\n\n* `code` - a string of code\n* `options` - an object literal supports these options:\n\t* `line` - the line number to point to, 1-based.\n\t* `column` - the column number to point to, 1-based.\n\t* `showLines` - the number of lines to show. The pointed line will try to stay in the middle of the displays lines.\n\t* `indent` - indent string prepend to each line, before the line number.\n\t* `tabSize` - width of a tab character.",
+          "readmeFilename": "README.md",
+          "repository": {
+              "type": "git",
+              "url": "git://github.com/curvedmark/pinpoint.git"
+          },
+          "scripts": {
+              "test": "mocha --bail --compilers coffee:coffee-script --ui qunit"
+          },
+          "version": "1.1.0"
+      }
+  }
+}

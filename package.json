@@ -43,11 +43,13 @@
     "date-fns": "^1.28.5",
     "lodash.flatten": "^4.4.0",
     "lodash.includes": "^4.3.0",
-    "node-fetch": "^1.7.1"
+    "node-fetch": "^1.7.1",
+    "semver": "^5.4.1"
   },
   "devDependencies": {
     "@types/jest": "^19.2.4",
     "@types/node": "^7.0.29",
+    "@types/semver": "^5.3.33",
     "commitizen": "^2.9.6",
     "cz-conventional-changelog": "^2.0.0",
     "danger": "*",

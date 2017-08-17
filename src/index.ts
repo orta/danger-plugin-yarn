@@ -8,9 +8,9 @@ export declare function markdown(message: string): void
 
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
-import * as fetch from "node-fetch"
-
 import * as includesOriginal from "lodash.includes"
+import * as fetch from "node-fetch"
+import * as semver from "semver"
 const includes = includesOriginal as any
 
 // Celebrate when a new release is being shipped
@@ -30,7 +30,7 @@ export const checkForNewDependencies = async packageDiff => {
         const newDependencies = element.added
         warn(`New dependencies added: ${sentence(newDependencies)}.`)
 
-        for (const dep of newDependencies){
+        for (const dep of newDependencies) {
           // Pump out a bunch of metadata information
           const npm = await getNPMMetadataForDep(dep)
           if (npm && npm.length) {
@@ -83,7 +83,6 @@ export const getNPMMetadataForDep = async dep => {
   const sentence = danger.utils.sentence
   const urlDep = encodeURIComponent(dep)
   const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, {})
-
   if (npmResponse.ok) {
     const tableDeets = [] as Array<{ name: string; message: string }>
     const npm = await npmResponse.json()
@@ -104,9 +103,14 @@ export const getNPMMetadataForDep = async dep => {
     if (npm.license) {
       tableDeets.push({ name: "License", message: npm.license })
     } else {
+      const { versions = {} } = npm
+      const licenses = Object.keys(versions)
+        .sort((a, b) => (semver.gte(b, a) ? 1 : 0)) // sort latest versions first
+        .map(version => versions[version].license) // get the license
+        .filter(Boolean) // remove falsy values
       tableDeets.push({
         name: "License",
-        message: "<b>NO LICENSE FOUND</b>",
+        message: `<b>${licenses[0] || "NO LICENSE FOUND"}</b>`,
       })
     }
 
