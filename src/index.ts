@@ -104,7 +104,7 @@ export const getNPMMetadataForDep = async dep => {
       })
     }
 
-    const license = npm.license || findLatestLicenseInReleases(npm)
+    const license = npm.license
     if (license) {
       tableDeets.push({ name: "License", message: license })
     } else {
