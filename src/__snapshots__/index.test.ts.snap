@@ -9,11 +9,12 @@ exports[`npm metadata Shows a bunch of useful text for a new dep 1`] = `
 
 <table>
   <thead><tr><th></th><th width=\\"100%\\"></th></tr></thead>
-  <tr><td>Created</td><td>about 1 year ago</td></tr><tr><td>Last Updated</td><td>2 months ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
+  <tr><td>Created</td><td>about 1 year ago</td></tr><tr><td>Last Updated</td><td>3 months ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
 </table>
 
 <details>
-<summary><code>README</code></summary>
+<summary><code>README</code></summary></br>
+
 [![npm](https://img.shields.io/npm/v/danger.svg)](https://www.npmjs.com/package/danger)
 [![Build Status](https://travis-ci.org/danger/danger-js.svg?branch=master)](https://travis-ci.org/danger/danger-js)
 [![Build Status](https://ci.appveyor.com/api/projects/status/ep5hgeox3lbc5c7f?svg=true)](https://ci.appveyor.com/project/orta/danger-js/branch/master)
@@ -233,6 +234,7 @@ We try to keep as much discussion as possible in GitHub issues, but also have a 
 [rxjs]: https://github.com/ReactiveX/rxjs/blob/master/dangerfile.js
 [setup]: http://danger.systems/guides/getting_started.html#creating-a-bot-account-for-danger-to-use
 [jest]: https://github.com/facebook/jest
+
 
 </details>
 

@@ -1,6 +1,7 @@
 // Provides dev-time typing structure for  `danger` - doesn't affect runtime.
 import { DangerDSLType } from "../node_modules/danger/distribution/dsl/DangerDSL"
 declare var danger: DangerDSLType
+declare var peril: any | null
 export declare function message(message: string): void
 export declare function warn(message: string): void
 export declare function fail(message: string): void
@@ -16,42 +17,44 @@ const includes = includesOriginal as any
 // Celebrate when a new release is being shipped
 export const checkForRelease = packageDiff => {
   if (packageDiff.version) {
-    markdown(":tada:")
+    message(":tada: - congrats on your new release")
   }
 }
 
 // Initial stab at showing information about a new dependency
 export const checkForNewDependencies = async packageDiff => {
   const sentence = danger.utils.sentence
-
+  const added = [] as string[]
   for (const element of [packageDiff.dependencies, packageDiff.devDependencies]) {
     if (element) {
       if (element.added.length) {
         const newDependencies = element.added
-        warn(`New dependencies added: ${sentence(newDependencies)}.`)
+        added.push.apply(added, newDependencies)
 
-        for (const dep of newDependencies){
+        for (const dep of newDependencies) {
           // Pump out a bunch of metadata information
           const npm = await getNPMMetadataForDep(dep)
           if (npm && npm.length) {
             markdown(npm)
-          } else {
+          } else if (dep) {
             warn(`Could not get info from npm on ${dep}`)
           }
 
-          // This isn't a gerat way to check, maybe peril should be something you
-          // can 'pull' out of the danger import?
-          if (!process.env.PERIL_BOT_USER_ID) {
+          if ("undefined" === typeof peril) {
             const yarn = await getYarnMetadataForDep(dep)
             if (yarn && yarn.length) {
               markdown(yarn)
-            } else {
+            } else if (dep) {
               warn(`Could not get info from yarn on ${dep}`)
             }
           }
         }
       }
     }
+  }
+
+  if (added) {
+    markdown(`New dependencies added: ${sentence(added)}.`)
   }
 }
 
@@ -101,8 +104,9 @@ export const getNPMMetadataForDep = async dep => {
       })
     }
 
-    if (npm.license) {
-      tableDeets.push({ name: "License", message: npm.license })
+    const license = npm.license || findLatestLicenseInReleases(npm)
+    if (license) {
+      tableDeets.push({ name: "License", message: license })
     } else {
       tableDeets.push({
         name: "License",
@@ -127,7 +131,7 @@ export const getNPMMetadataForDep = async dep => {
 
       if (tag.dependencies) {
         const deps = Object.keys(tag.dependencies)
-        const depLinks = deps.map(d => `<a href='http: //npmjs.com/package/${d}'>${d}</a>`)
+        const depLinks = deps.map(d => `<a href='http://npmjs.com/package/${d}'>${d}</a>`)
         tableDeets.push({
           name: "Direct Dependencies",
           message: sentence(depLinks),
@@ -146,8 +150,10 @@ export const getNPMMetadataForDep = async dep => {
     if (npm.readme && npm.readme.length < 10000) {
       readme = `
 <details>
-<summary><code>README</code></summary>
+<summary><code>README</code></summary></br>
+
 ${npm.readme}
+
 </details>
 `
     }

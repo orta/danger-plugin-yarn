@@ -3,7 +3,7 @@ jest.mock("node-fetch", () => () =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
-  }),
+  })
 )
 
 import yarn, {
@@ -33,7 +33,7 @@ afterEach(() => {
 describe("checkForRelease", () => {
   it("Says congrats if there is a package diff version change", () => {
     checkForRelease({ version: {} })
-    expect(global.markdown).toHaveBeenCalledWith(":tada:")
+    expect(global.message).toHaveBeenCalledWith(":tada: - congrats on your new release")
   })
 
   it("does nothing when there's no version change", () => {
