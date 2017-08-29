@@ -25,37 +25,40 @@ export const checkForRelease = packageDiff => {
 export const checkForNewDependencies = async packageDiff => {
   const sentence = danger.utils.sentence
   const added = [] as string[]
-  for (const element of [packageDiff.dependencies, packageDiff.devDependencies]) {
-    if (element) {
-      if (element.added.length) {
-        const newDependencies = element.added
-        added.push.apply(added, newDependencies)
+  const newDependencies = findNewDependencies(packageDiff)
 
-        for (const dep of newDependencies) {
-          // Pump out a bunch of metadata information
-          const npm = await getNPMMetadataForDep(dep)
-          if (npm && npm.length) {
-            markdown(npm)
-          } else if (dep) {
-            warn(`Could not get info from npm on ${dep}`)
-          }
+  if (newDependencies.length) {
+    markdown(`New dependencies added: ${sentence(newDependencies)}.`)
+  }
 
-          if ("undefined" === typeof peril) {
-            const yarn = await getYarnMetadataForDep(dep)
-            if (yarn && yarn.length) {
-              markdown(yarn)
-            } else if (dep) {
-              warn(`Could not get info from yarn on ${dep}`)
-            }
-          }
-        }
+  for (const dep of newDependencies) {
+    // Pump out a bunch of metadata information
+    const npm = await getNPMMetadataForDep(dep)
+    if (npm && npm.length) {
+      markdown(npm)
+    } else if (dep) {
+      warn(`Could not get info from npm on ${dep}`)
+    }
+
+    if ("undefined" === typeof peril) {
+      const yarn = await getYarnMetadataForDep(dep)
+      if (yarn && yarn.length) {
+        markdown(yarn)
+      } else if (dep) {
+        warn(`Could not get info from yarn on ${dep}`)
       }
     }
   }
+}
 
-  if (added) {
-    markdown(`New dependencies added: ${sentence(added)}.`)
+export const findNewDependencies = packageDiff => {
+  const added = [] as string[]
+  for (const element of [packageDiff.dependencies, packageDiff.devDependencies]) {
+    if (element && element.added && element.added.length) {
+      added.push.apply(added, element.added)
+    }
   }
+  return added
 }
 
 export const getYarnMetadataForDep = async dep => {
