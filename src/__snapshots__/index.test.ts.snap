@@ -9,7 +9,7 @@ exports[`npm metadata Shows a bunch of useful text for a new dep 1`] = `
 
 <table>
   <thead><tr><th></th><th width=\\"100%\\"></th></tr></thead>
-  <tr><td>Created</td><td>about 1 year ago</td></tr><tr><td>Last Updated</td><td>3 months ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
+  <tr><td>Created</td><td>over 1 year ago</td></tr><tr><td>Last Updated</td><td>3 months ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
 </table>
 
 <details>
