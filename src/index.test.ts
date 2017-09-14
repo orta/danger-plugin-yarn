@@ -32,8 +32,18 @@ afterEach(() => {
 
 describe("checkForRelease", () => {
   it("Says congrats if there is a package diff version change", () => {
-    checkForRelease({ version: {} })
+    checkForRelease({ version: { before: "1.0.0", after: "1.0.1" } })
     expect(global.message).toHaveBeenCalledWith(":tada: - congrats on your new release")
+  })
+
+  it("Says nothing if there is a no difference in version", () => {
+    checkForRelease({ version: { before: "1.0.0", after: "1.0.0" } })
+    expect(global.message).toHaveBeenCalledTimes(0)
+  })
+
+  it("Says nothing if there is a backslip in version", () => {
+    checkForRelease({ version: { before: "1.0.0", after: "0.2.0" } })
+    expect(global.message).toHaveBeenCalledTimes(0)
   })
 
   it("does nothing when there's no version change", () => {

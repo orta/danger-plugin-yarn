@@ -10,14 +10,17 @@ export declare function markdown(message: string): void
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
 import * as fetch from "node-fetch"
+import * as semver from "semver"
 
 import * as includesOriginal from "lodash.includes"
 const includes = includesOriginal as any
 
 // Celebrate when a new release is being shipped
 export const checkForRelease = packageDiff => {
-  if (packageDiff.version) {
-    message(":tada: - congrats on your new release")
+  if (packageDiff.version && packageDiff.version.before && packageDiff.version.after) {
+    if (semver.lt(packageDiff.version.before, packageDiff.version.after)) {
+      message(":tada: - congrats on your new release")
+    }
   }
 }
 
@@ -37,7 +40,7 @@ export const checkForNewDependencies = async packageDiff => {
     if (npm && npm.length) {
       markdown(npm)
     } else if (dep) {
-      warn(`Could not get info from npm on ${dep}`)
+      warn(`Could not get info from npm on ${printDep(dep)}`)
     }
 
     if ("undefined" === typeof peril) {
@@ -45,7 +48,7 @@ export const checkForNewDependencies = async packageDiff => {
       if (yarn && yarn.length) {
         markdown(yarn)
       } else if (dep) {
-        warn(`Could not get info from yarn on ${dep}`)
+        warn(`Could not get info from yarn on ${printDep(dep)}`)
       }
     }
   }
@@ -73,7 +76,7 @@ export const getYarnMetadataForDep = async dep => {
         const messages = whyJSON.filter(msg => typeof msg.data === "string").map(m => m.data)
         resolve(`
   <details>
-    <summary><code>yarn why ${dep}</code> output</summary>
+    <summary><code>yarn why ${printDep(dep)}</code> output</summary>
     <p><code><ul><li>${messages.join("</li><li>")}
     </li></ul></code></p>
   </details>
@@ -84,6 +87,8 @@ export const getYarnMetadataForDep = async dep => {
     })
   })
 }
+
+const printDep = (name: string) => name.replace(/@/, "&#64;")
 
 export const getNPMMetadataForDep = async dep => {
   const sentence = danger.utils.sentence
@@ -134,7 +139,7 @@ export const getNPMMetadataForDep = async dep => {
 
       if (tag.dependencies) {
         const deps = Object.keys(tag.dependencies)
-        const depLinks = deps.map(d => `<a href='http://npmjs.com/package/${d}'>${d}</a>`)
+        const depLinks = deps.map(d => `<a href='http://npmjs.com/package/${d}'>${printDep(d)}</a>`)
         tableDeets.push({
           name: "Direct Dependencies",
           message: sentence(depLinks),
@@ -164,7 +169,7 @@ ${npm.readme}
     const homepage = npm.homepage ? npm.homepage : `http://npmjs.com/package/${dep}`
 
     return `
-<h2><a href="${homepage}">${dep}</a></h2>
+<h2><a href="${homepage}">${printDep(dep)}</a></h2>
 <p>Author: ${npm.author && npm.author.name ? npm.author.name : "Unknown"}</p>
 <p>Description: ${npm.description}</p>
 <p>Homepage: <a href="${homepage}">${homepage}</a></p>
@@ -194,8 +199,8 @@ export const checkForLockfileDiff = packageDiff => {
 export const checkForTypesInDeps = packageDiff => {
   const sentence = danger.utils.sentence
 
-  if (packageDiff.dependencies) {
-    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types"))
+  if (packageDiff.dependencies && packageDiff.dependencies.added) {
+    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types")).map(printDep)
     if (typesDeps.length) {
       const message = `@types dependencies were added to package.json, as a dependency for others.`
       const idea = `You need to move ${sentence(typesDeps)} into "devDependencies"?`
