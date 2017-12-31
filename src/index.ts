@@ -31,7 +31,7 @@ export const checkForNewDependencies = async packageDiff => {
   const newDependencies = findNewDependencies(packageDiff)
 
   if (newDependencies.length) {
-    markdown(`New dependencies added: ${sentence(newDependencies)}.`)
+    markdown(`New dependencies added: ${sentence(newDependencies.map(safeLink))}.`)
   }
 
   for (const dep of newDependencies) {
@@ -40,7 +40,7 @@ export const checkForNewDependencies = async packageDiff => {
     if (npm && npm.length) {
       markdown(npm)
     } else if (dep) {
-      warn(`Could not get info from npm on ${printDep(dep)}`)
+      warn(`Could not get info from npm on ${safeLink(dep)}</a>`)
     }
 
     if ("undefined" === typeof peril) {
@@ -48,7 +48,7 @@ export const checkForNewDependencies = async packageDiff => {
       if (yarn && yarn.length) {
         markdown(yarn)
       } else if (dep) {
-        warn(`Could not get info from yarn on ${printDep(dep)}`)
+        warn(`Could not get info from yarn on ${safeLink(dep)}`)
       }
     }
   }
@@ -88,7 +88,9 @@ export const getYarnMetadataForDep = async dep => {
   })
 }
 
+const safeLink = (name: string) => `<a href='${linkToNPM(name)}'><code>${printDep(name)}</code></a>`
 const printDep = (name: string) => name.replace(/@/, "&#64;")
+const linkToNPM = (name: string) => `https://www.npmjs.com/package/${name}`
 
 export const getNPMMetadataForDep = async dep => {
   const sentence = danger.utils.sentence
@@ -139,7 +141,7 @@ export const getNPMMetadataForDep = async dep => {
 
       if (tag.dependencies) {
         const deps = Object.keys(tag.dependencies)
-        const depLinks = deps.map(d => `<a href='http://npmjs.com/package/${d}'>${printDep(d)}</a>`)
+        const depLinks = deps.map(safeLink)
         tableDeets.push({
           name: "Direct Dependencies",
           message: sentence(depLinks),
