@@ -77,8 +77,8 @@ export const getYarnMetadataForDep = async dep => {
         resolve(`
   <details>
     <summary><code>yarn why ${printDep(dep)}</code> output</summary>
-    <p><code><ul><li>${messages.join("</li><li>")}
-    </li></ul></code></p>
+    <ul><li><code>${messages.join("</code></li><li><code>")}
+    </code></li></ul>
   </details>
   `)
       } else {
