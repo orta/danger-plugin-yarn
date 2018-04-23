@@ -25,7 +25,7 @@ export const checkForRelease = packageDiff => {
 }
 
 // Initial stab at showing information about a new dependency
-export const checkForNewDependencies = async packageDiff => {
+export const checkForNewDependencies = async (packageDiff, npmAuthToken?: string) => {
   const sentence = danger.utils.sentence
   const added = [] as string[]
   const newDependencies = findNewDependencies(packageDiff)
@@ -36,7 +36,7 @@ export const checkForNewDependencies = async packageDiff => {
 
   for (const dep of newDependencies) {
     // Pump out a bunch of metadata information
-    const npm = await getNPMMetadataForDep(dep)
+    const npm = await getNPMMetadataForDep(dep, npmAuthToken)
     if (npm && npm.length) {
       markdown(npm)
     } else if (dep) {
@@ -92,10 +92,14 @@ const safeLink = (name: string) => `<a href='${linkToNPM(name)}'><code>${printDe
 const printDep = (name: string) => name.replace(/@/, "&#64;")
 const linkToNPM = (name: string) => `https://www.npmjs.com/package/${name}`
 
-export const getNPMMetadataForDep = async dep => {
+export const getNPMMetadataForDep = async (dep, npmAuthToken?: string) => {
   const sentence = danger.utils.sentence
-  const urlDep = encodeURIComponent(dep)
-  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, {})
+
+  // Note: NPM can't handle encoded '@'
+  const urlDep = encodeURIComponent(dep).replace("%40", "@")
+
+  const headers = npmAuthToken ? { Authorization: `Bearer ${npmAuthToken}` } : undefined
+  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, { headers })
 
   if (npmResponse.ok) {
     const tableDeets = [] as Array<{ name: string; message: string }>
@@ -211,16 +215,21 @@ export const checkForTypesInDeps = packageDiff => {
   }
 }
 
+export interface Options {
+  pathToPackageJSON?: string
+  npmAuthToken?: string
+}
+
 /**
  * Provides dependency information on dependency changes in a PR
  */
-export default async function yarn(pathToPackageJSON?: string) {
-  const path = pathToPackageJSON ? pathToPackageJSON : "package.json"
+export default async function yarn(options: Options = {}) {
+  const path = options.pathToPackageJSON ? options.pathToPackageJSON : "package.json"
   const packageDiff = await danger.git.JSONDiffForFile(path)
 
   checkForRelease(packageDiff)
   checkForLockfileDiff(packageDiff)
   checkForTypesInDeps(packageDiff)
 
-  await checkForNewDependencies(packageDiff)
+  await checkForNewDependencies(packageDiff, options.npmAuthToken)
 }
