@@ -34,6 +34,17 @@ And exports a default function to handle all of them at once.
 
 Note: async functions like the default one [have be to](http://danger.systems/js/guides/the_dangerfile.html#async) `schedule`'d by Danger.
 
+## Private packages
+
+If you want the plugin to find your private packages on npm, you need to provide an npm [authentication token](https://docs.npmjs.com/getting-started/working_with_tokens):
+
+```js
+// dangerfile.js
+import yarn from 'danger-plugin-yarn'
+
+schedule(yarn({ npmAuthToken: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' }))
+```
+
 ## Changelog
 
 See the GitHub [release history](https://github.com/orta/danger-plugin-yarn/releases).
