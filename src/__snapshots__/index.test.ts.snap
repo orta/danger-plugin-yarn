@@ -8,8 +8,8 @@ exports[`npm metadata Shows a bunch of useful text for a new dep 1`] = `
 <p>Homepage: <a href=\\"https://github.com/danger/danger-js#readme\\">https://github.com/danger/danger-js#readme</a></p>
 
 <table>
-  <thead><tr><th></th><th width=\\"100%\\"></th></tr></thead>
-  <tr><td>Created</td><td>almost 2 years ago</td></tr><tr><td>Last Updated</td><td>11 months ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>undefined</td></tr><tr><td>Keywords</td><td>undefined</td></tr>
+<thead><tr><th></th><th width=\\"100%\\"></th></tr></thead>
+<tr><td>Created</td><td>over 2 years ago</td></tr><tr><td>Last Updated</td><td>over 1 year ago</td></tr><tr><td>License</td><td>MIT</td></tr><tr><td>Maintainers</td><td>3</td></tr><tr><td>Releases</td><td>45</td></tr><tr><td>Direct Dependencies</td><td>mocked</td></tr><tr><td>Keywords</td><td>mocked</td></tr>
 </table>
 
 <details>

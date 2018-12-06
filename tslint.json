@@ -1,32 +1,27 @@
 {
-  "extends": [
-    "tslint:recommended"
-  ],
+  "extends": ["tslint:recommended"],
   "rules": {
+    "array-type": [true, "generic"],
     "arrow-parens": false,
-    "interface-name": [
-      true,
-      "never-prefix"
-    ],
-    "max-classes-per-file": [
-      false
-    ],
-    "member-access": [
-      false,
-      "check-accessor",
-      "check-constructor"
-    ],
+    "interface-name": [true, "never-prefix"],
+    "interface-over-type-literal": false,
+    "max-classes-per-file": false,
+    "member-access": [false, "check-accessor", "check-constructor"],
     "object-literal-sort-keys": false,
-    "semicolon": [
-      true,
-      "never",
-      "ignore-interfaces",
-      "ignore-bound-class-methods"
-    ],
+    "semicolon": [true, "never", "ignore-interfaces", "ignore-bound-class-methods"],
     "switch-default": false,
     "trailing-comma": [
       true,
-      { "multiline": "always", "singleline": "never" }
+      {
+        "esSpecCompliant": true,
+        "multiline": {
+          "objects": "always",
+          "arrays": "always",
+          "functions": "never",
+          "typeLiterals": "ignore"
+        },
+        "singleline": "never"
+      }
     ]
   }
 }
