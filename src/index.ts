@@ -206,7 +206,7 @@ export const checkForTypesInDeps = packageDiff => {
   const sentence = danger.utils.sentence
 
   if (packageDiff.dependencies && packageDiff.dependencies.added) {
-    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types")).map(printDep)
+    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types/")).map(printDep)
     if (typesDeps.length) {
       const message = `@types dependencies were added to package.json, as a dependency for others.`
       const idea = `You need to move ${sentence(typesDeps)} into "devDependencies"?`
