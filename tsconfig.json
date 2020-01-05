@@ -2,6 +2,9 @@
     "compilerOptions": {
         "target": "es6",
         "module": "commonjs",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "lib": ["es2017"],
         "rootDir": "src",
         "outDir": "dist",
         "allowJs": false,
@@ -10,7 +13,6 @@
         "declaration": true,
         "declarationDir": "dist"
     },
-    "lib":["es2017"],
     "include": [
         "src/**/*.ts",
         "src/**/*.tsx",

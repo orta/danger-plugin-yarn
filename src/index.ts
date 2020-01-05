@@ -1,5 +1,6 @@
 // Provides dev-time typing structure for  `danger` - doesn't affect runtime.
 import { DangerDSLType } from "../node_modules/danger/distribution/dsl/DangerDSL"
+import { JSONDiff } from "../node_modules/danger/distribution/dsl/GitDSL"
 declare var danger: DangerDSLType
 declare var peril: any | null
 export declare function message(message: string): void
@@ -9,14 +10,63 @@ export declare function markdown(message: string): void
 
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
-import * as fetch from "node-fetch"
-import * as semver from "semver"
+import fetch from "node-fetch"
+import semver from "semver"
+import { URL } from "url"
+import { promisify } from "util"
 
-import * as includesOriginal from "lodash.includes"
-const includes = includesOriginal as any
+import includesOriginal from "lodash.includes"
+
+import { getProxyAgentFromUri } from "./getProxyAgentFromUri"
+import { getRegistries, Registry } from "./getRegistries"
+import { getYarnConfig, YarnConfig } from "./getYarnConfig"
+
+type IncludesFn = <TValue>(collection: Array<TValue>, value: TValue) => boolean
+
+const exec = promisify(child_process.exec)
+const includes: IncludesFn = includesOriginal
+
+const escapePackage = (name: string): string => name.replace(/@/, "&#64;")
+const linkToNPM = (name: string): string => `https://www.npmjs.com/package/${name}`
+
+const defaultRenderPackageLink = (name: string): string => `<a href='${linkToNPM(name)}'>\`${escapePackage(name)}\`</a>`
+
+const defaultRenderReadme = npm => `
+<details>
+<summary><code>README</code></summary></br>
+
+${npm.readme}
+
+</details>
+`
+
+const defaultRenderPackageDetails = (pkg: string, npm: NpmPackageJson, tableDeets: PackageDetails, readme: string) => {
+  const homepage = npm.homepage ? npm.homepage : `http://npmjs.com/package/${escapePackage(pkg)}`
+  return `
+<h2><a href="${homepage}">${escapePackage(pkg)}</a></h2>
+<p>Author: ${npm.author && npm.author.name ? npm.author.name : "Unknown"}</p>
+<p>Description: ${npm.description}</p>
+<p>Homepage: <a href="${homepage}">${homepage}</a></p>
+
+<table>
+<thead><tr><th></th><th width="100%"></th></tr></thead>
+${tableDeets.map(deet => `<tr><td>${deet.name}</td><td>${deet.message}</td></tr>`).join("")}
+</table>
+${readme}
+`
+}
+
+const defaultRenderMessage = (msg: string, idea: string): string => `${msg}<br/><i>${idea}</i>`
+
+const defaultRenderYarnWhy = (dep: string, infoMessages: ReadonlyArray<string>): string => `
+<details>
+  <summary><code>yarn why ${escapePackage(dep)}</code> output</summary>
+  <ul><li><code>${infoMessages.join("</code></li><li><code>")}</code></li></ul>
+</details>
+`
 
 // Celebrate when a new release is being shipped
-export const checkForRelease = packageDiff => {
+export const checkForRelease = (packageDiff: JSONDiff, options: Options = {}): void => {
   if (packageDiff.version && packageDiff.version.before && packageDiff.version.after) {
     if (semver.lt(packageDiff.version.before, packageDiff.version.after)) {
       message(":tada: - congrats on your new release")
@@ -25,37 +75,42 @@ export const checkForRelease = packageDiff => {
 }
 
 // Initial stab at showing information about a new dependency
-export const checkForNewDependencies = async (packageDiff, npmAuthToken?: string) => {
+export const checkForNewDependencies = async (
+  packageDiff: JSONDiff,
+  config: YarnConfig,
+  options: Options = {}
+): Promise<void> => {
   const sentence = danger.utils.sentence
-  const added = [] as string[]
+  const { renderPackageLink = defaultRenderPackageLink } = options
+
   const newDependencies = findNewDependencies(packageDiff)
 
   if (newDependencies.length) {
-    markdown(`New dependencies added: ${sentence(newDependencies.map(safeLink))}.`)
+    markdown(`New dependencies added: ${sentence(newDependencies.map(renderPackageLink))}.`)
   }
 
   for (const dep of newDependencies) {
     // Pump out a bunch of metadata information
-    const npm = await getNPMMetadataForDep(dep, npmAuthToken)
+    const npm = await getNPMMetadataForDep(dep, config, options)
     if (npm && npm.length) {
       markdown(npm)
     } else if (dep) {
-      warn(`Could not get info from npm on ${safeLink(dep)}</a>`)
+      warn(`Could not get info from npm on ${renderPackageLink(dep)}</a>`)
     }
 
     if ("undefined" === typeof peril) {
-      const yarn = await getYarnMetadataForDep(dep)
-      if (yarn && yarn.length) {
-        markdown(yarn)
+      const yarnWhyMetadata = await getYarnMetadataForDep(dep)
+      if (yarnWhyMetadata && yarnWhyMetadata.length) {
+        markdown(yarnWhyMetadata)
       } else if (dep) {
-        warn(`Could not get info from yarn on ${safeLink(dep)}`)
+        warn(`Could not get info from yarn on ${renderPackageLink(dep)}`)
       }
     }
   }
 }
 
-export const findNewDependencies = packageDiff => {
-  const added = [] as string[]
+export const findNewDependencies = (packageDiff: JSONDiff): Array<string> => {
+  const added: Array<string> = []
   for (const element of [packageDiff.dependencies, packageDiff.devDependencies]) {
     if (element && element.added && element.added.length) {
       added.push.apply(added, element.added)
@@ -64,46 +119,98 @@ export const findNewDependencies = packageDiff => {
   return added
 }
 
-export const getYarnMetadataForDep = async dep => {
-  return new Promise<string>(resolve => {
-    child_process.exec(`yarn why '${dep}' --json`, (err, output) => {
-      if (output) {
-        // Comes as a series of little JSON messages
-        const usefulJSONContents = output.toString().split(`{"type":"activityEnd","data":{"id":0}}`).pop() as string
-        const asJSON = usefulJSONContents.split("}\n{").join("},{")
-
-        const whyJSON = JSON.parse(`[${asJSON}]`)
-        const messages = whyJSON.filter(msg => typeof msg.data === "string").map(m => m.data)
-        resolve(`
-  <details>
-    <summary><code>yarn why ${printDep(dep)}</code> output</summary>
-    <ul><li><code>${messages.join("</code></li><li><code>")}
-    </code></li></ul>
-  </details>
-  `)
-      } else {
-        resolve("")
-      }
-    })
-  })
+export interface YarnWhyMessage {
+  type: "activityStart" | "activityTick" | "activityEnd" | "step" | "info"
+  data: object | string
 }
 
-const safeLink = (name: string) => `<a href='${linkToNPM(name)}'><code>${printDep(name)}</code></a>`
-const printDep = (name: string) => name.replace(/@/, "&#64;")
-const linkToNPM = (name: string) => `https://www.npmjs.com/package/${name}`
+export const getYarnMetadataForDep = async (
+  dep: string,
+  { renderYarnWhy = defaultRenderYarnWhy }: Options = {}
+): Promise<string> => {
+  const { stdout } = await exec(`yarn why '${dep}' --json`)
 
-export const getNPMMetadataForDep = async (dep, npmAuthToken?: string) => {
+  if (stdout) {
+    // Comes as a series of little JSON messages
+    const whyMessages: ReadonlyArray<YarnWhyMessage> = stdout.split("\n").map(line => JSON.parse(line.trim()))
+
+    const infoMessages = whyMessages.filter(msg => msg.type === "info").map(m => m.data) as ReadonlyArray<string>
+    return renderYarnWhy(dep, infoMessages)
+  } else {
+    return ""
+  }
+}
+
+type PackageDetails = Array<{
+  readonly name: string
+  readonly message: string
+}>
+
+type NpmPackageJson = {
+  readonly time?: {
+    readonly created?: string
+    readonly modified?: string
+  }
+  readonly "dist-tags"?: {
+    readonly latest?: string
+  }
+  readonly versions: {
+    readonly [currentTag: string]: {
+      readonly dependencies: {
+        readonly [packageName: string]: string
+      }
+    }
+  }
+  readonly license?: string
+  readonly author?: {
+    readonly name?: string
+  }
+  readonly maintainers?: string
+  readonly homepage?: string
+  readonly description?: string
+  readonly readme?: string
+  readonly keywords: Array<string>
+}
+
+export const getNPMMetadataForDep = async (
+  dep: string,
+  config: YarnConfig,
+  {
+    npmAuthToken,
+    renderPackageLink = defaultRenderPackageLink,
+    renderReadme = defaultRenderReadme,
+    renderPackageDetails = defaultRenderPackageDetails,
+  }: Options = {}
+): Promise<string | undefined> => {
   const sentence = danger.utils.sentence
 
   // Note: NPM can't handle encoded '@'
   const urlDep = encodeURIComponent(dep).replace("%40", "@")
 
-  const headers = npmAuthToken ? { Authorization: `Bearer ${npmAuthToken}` } : undefined
-  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, { headers })
+  const registries = getRegistries(config)
+
+  // Configure the default registry.
+  let registry: Registry = registries.default
+  if (npmAuthToken) {
+    registry = { ...registries.default, authToken: npmAuthToken }
+  }
+
+  // If the dependency belongs to a scope assigned to a different registry use that instead.
+  const hasScope = dep.startsWith("@")
+  if (hasScope) {
+    const [scopeName] = dep.split("/")
+    registry = registries[scopeName]
+  }
+
+  const uri = new URL(`${registry.url}/${urlDep}`)
+  const agent = getProxyAgentFromUri(uri, config)
+
+  const headers = registry.authToken ? { Authorization: `Bearer ${registry.authToken}` } : undefined
+  const npmResponse = await fetch(uri.toString(), { agent, headers })
 
   if (npmResponse.ok) {
-    const tableDeets = [] as Array<{ name: string; message: string }>
-    const npm = await npmResponse.json()
+    const tableDeets: PackageDetails = []
+    const npm: NpmPackageJson = await npmResponse.json()
 
     if (npm.time && npm.time.created) {
       const distance = distanceInWords(new Date(npm.time.created), new Date())
@@ -124,14 +231,14 @@ export const getNPMMetadataForDep = async (dep, npmAuthToken?: string) => {
     } else {
       tableDeets.push({
         name: "License",
-        message: "<b>NO LICENSE FOUND</b>",
+        message: "**NO LICENSE FOUND**",
       })
     }
 
     if (npm.maintainers) {
       tableDeets.push({
         name: "Maintainers",
-        message: npm.maintainers.length,
+        message: String(npm.maintainers.length),
       })
     }
 
@@ -145,7 +252,7 @@ export const getNPMMetadataForDep = async (dep, npmAuthToken?: string) => {
 
       if (tag.dependencies) {
         const deps = Object.keys(tag.dependencies)
-        const depLinks = deps.map(safeLink)
+        const depLinks = deps.map(renderPackageLink)
         tableDeets.push({
           name: "Direct Dependencies",
           message: sentence(depLinks),
@@ -160,76 +267,96 @@ export const getNPMMetadataForDep = async (dep, npmAuthToken?: string) => {
       })
     }
 
-    let readme = npm.readme ? "This README is too long to show." : ""
-    if (npm.readme && npm.readme.length < 10000) {
-      readme = `
-<details>
-<summary><code>README</code></summary></br>
-
-${npm.readme}
-
-</details>
-`
+    let readme = ""
+    if (npm.readme) {
+      if (npm.readme.length < 10000) {
+        readme = renderReadme(npm)
+      } else {
+        readme = "This README is too long to show."
+      }
     }
 
-    const homepage = npm.homepage ? npm.homepage : `http://npmjs.com/package/${dep}`
-
-    return `
-<h2><a href="${homepage}">${printDep(dep)}</a></h2>
-<p>Author: ${npm.author && npm.author.name ? npm.author.name : "Unknown"}</p>
-<p>Description: ${npm.description}</p>
-<p>Homepage: <a href="${homepage}">${homepage}</a></p>
-
-<table>
-  <thead><tr><th></th><th width="100%"></th></tr></thead>
-  ${tableDeets.map(deet => `<tr><td>${deet.name}</td><td>${deet.message}</td></tr>`).join("")}
-</table>
-${readme}
-`
+    return renderPackageDetails(dep, npm, tableDeets, readme)
   }
 }
+
 // Ensure a lockfile change if deps/devDeps changes, in case
 // someone has only used `npm install` instead of `yarn.
-export const checkForLockfileDiff = packageDiff => {
+export const checkForLockfileDiff = (
+  packageDiff: JSONDiff,
+  { renderMessage = defaultRenderMessage }: Options = {}
+): void => {
   if (packageDiff.dependencies || packageDiff.devDependencies) {
     const lockfileChanged = includes(danger.git.modified_files, "yarn.lock")
     if (!lockfileChanged) {
-      const message = "Changes were made to package.json, but not to yarn.lock."
+      const msg = "Changes were made to package.json, but not to yarn.lock."
       const idea = "Perhaps you need to run `yarn install`?"
-      warn(`${message}<br/><i>${idea}</i>`)
+      warn(renderMessage(msg, idea))
     }
   }
 }
 
 // Don't ship @types dependencies to consumers of Danger
-export const checkForTypesInDeps = packageDiff => {
+export const checkForTypesInDeps = (
+  packageDiff: JSONDiff,
+  { renderMessage = defaultRenderMessage }: Options = {}
+): void => {
   const sentence = danger.utils.sentence
 
   if (packageDiff.dependencies && packageDiff.dependencies.added) {
-    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types/")).map(printDep)
+    const typesDeps = packageDiff.dependencies.added.filter(d => d.startsWith("@types/")).map(escapePackage)
     if (typesDeps.length) {
-      const message = `@types dependencies were added to package.json, as a dependency for others.`
+      const msg = `@types dependencies were added to package.json, as a dependency for others.`
       const idea = `You need to move ${sentence(typesDeps)} into "devDependencies"?`
-      fail(`${message}<br/><i>${idea}</i>`)
+      fail(renderMessage(msg, idea))
     }
   }
 }
 
 export interface Options {
-  pathToPackageJSON?: string
+  pathToRootPackageJSON?: string
+  pathToPackageJSON?: string | ReadonlyArray<string>
   npmAuthToken?: string
+  renderPackageDetails?: typeof defaultRenderPackageDetails
+  renderReadme?: typeof defaultRenderReadme
+  renderYarnWhy?: typeof defaultRenderYarnWhy
+  renderMessage?: typeof defaultRenderMessage
+  renderPackageLink?: typeof defaultRenderPackageLink
 }
 
 /**
  * Provides dependency information on dependency changes in a PR
  */
-export default async function yarn(options: Options = {}) {
-  const path = options.pathToPackageJSON ? options.pathToPackageJSON : "package.json"
-  const packageDiff = await danger.git.JSONDiffForFile(path)
+export default async function yarn(options: Options = {}): Promise<void> {
+  const pathToRootPackageJSON = options.pathToRootPackageJSON ? options.pathToRootPackageJSON : "package.json"
 
-  checkForRelease(packageDiff)
-  checkForLockfileDiff(packageDiff)
-  checkForTypesInDeps(packageDiff)
+  let pathToPackageJSONs: ReadonlyArray<string>
+  if (options.pathToPackageJSON) {
+    pathToPackageJSONs = Array.isArray(options.pathToPackageJSON)
+      ? options.pathToPackageJSON
+      : [options.pathToPackageJSON]
+  } else {
+    const isNonRootPackageJson = (path: string) => path.endsWith("package.json") && path !== pathToRootPackageJSON
 
-  await checkForNewDependencies(packageDiff, options.npmAuthToken)
+    pathToPackageJSONs = Array.from(
+      new Set([...danger.git.created_files, ...danger.git.modified_files].filter(isNonRootPackageJson))
+    )
+  }
+
+  const rootPackageDiff = await danger.git.JSONDiffForFile(pathToRootPackageJSON)
+  const packageDiffs: ReadonlyArray<JSONDiff> = await Promise.all(
+    pathToPackageJSONs.map(
+      (pathToPackageJSON: string): Promise<JSONDiff> => danger.git.JSONDiffForFile(pathToPackageJSON)
+    )
+  )
+
+  checkForLockfileDiff(rootPackageDiff)
+
+  const config = await getYarnConfig()
+  for (const packageDiff of packageDiffs) {
+    checkForRelease(packageDiff, options)
+    checkForTypesInDeps(packageDiff, options)
+
+    await checkForNewDependencies(packageDiff, config, options)
+  }
 }

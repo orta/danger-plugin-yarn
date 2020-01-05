@@ -1,4 +1,8 @@
+import { JSONDiff } from "../node_modules/danger/distribution/dsl/GitDSL"
+
 import * as mockfs from "fs"
+import { checkForLockfileDiff, checkForRelease, checkForTypesInDeps, getNPMMetadataForDep } from "./index"
+
 jest.mock("node-fetch", () => () =>
   Promise.resolve({
     ok: true,
@@ -6,21 +10,17 @@ jest.mock("node-fetch", () => () =>
   })
 )
 
-import yarn, {
-  checkForLockfileDiff,
-  checkForNewDependencies,
-  checkForRelease,
-  checkForTypesInDeps,
-  getNPMMetadataForDep,
-} from "./index"
-
 declare const global: any
 beforeEach(() => {
   global.warn = jest.fn()
   global.message = jest.fn()
   global.fail = jest.fn()
   global.markdown = jest.fn()
-  global.danger = { utils: { sentence: jest.fn() } }
+  global.danger = {
+    utils: {
+      sentence: jest.fn().mockReturnValue("mocked"),
+    },
+  }
 })
 
 afterEach(() => {
@@ -59,8 +59,10 @@ describe("checkForTypesInDeps", () => {
   })
 
   it("when there is an @types dependency, it should call fail", () => {
-    const deps = {
+    const deps: JSONDiff = {
       dependencies: {
+        before: [],
+        after: ["@types/danger"],
         added: ["@types/danger"],
       },
     }
@@ -77,8 +79,11 @@ describe("checkForLockfileDiff", () => {
 
   it("when there are dependency changes, and no lockfile in modified - warn", () => {
     global.danger = { git: { modified_files: [] } }
-    const deps = {
-      dependencies: {},
+    const deps: JSONDiff = {
+      dependencies: {
+        before: [],
+        after: [],
+      },
     }
     checkForLockfileDiff(deps)
     expect(global.warn).toHaveBeenCalledTimes(1)
@@ -86,7 +91,12 @@ describe("checkForLockfileDiff", () => {
 
   it("when there are dependency changes, and a lockfile in modified - do not warn", () => {
     global.danger = { git: { modified_files: ["yarn.lock"] } }
-    const deps = { dependencies: {} }
+    const deps: JSONDiff = {
+      dependencies: {
+        before: [],
+        after: [],
+      },
+    }
     checkForLockfileDiff(deps)
     expect(global.warn).toHaveBeenCalledTimes(0)
   })
@@ -94,7 +104,10 @@ describe("checkForLockfileDiff", () => {
 
 describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
-    const data = await getNPMMetadataForDep("danger")
+    const defaultConfig = {
+      registry: "https://registry.npmjs.org/",
+    }
+    const data = await getNPMMetadataForDep("danger", defaultConfig)
     expect(data).toMatchSnapshot()
   })
 })
