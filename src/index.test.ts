@@ -90,6 +90,27 @@ describe("checkForLockfileDiff", () => {
     checkForLockfileDiff(deps)
     expect(global.warn).toHaveBeenCalledTimes(0)
   })
+
+  it("detects changes from multiple package.json files", async () => {
+    global.danger.git = {
+      modified_files: ["package.json"],
+      created_files: ["packages/my-other-package/package.json"],
+      JSONDiffForFile: jest.fn(() => ({
+        dependencies: {
+          before: {},
+          after: {
+            "my-new-dependency": "^1.0.0",
+          },
+        },
+      })),
+    }
+
+    await yarn()
+
+    expect(global.warn).toHaveBeenCalledTimes(2)
+    expect(global.warn.mock.calls[0][0]).toMatch(/.*Changes were made to package.json.*/)
+    expect(global.warn.mock.calls[1][0]).toMatch(/.*Changes were made to package.json.*/)
+  })
 })
 
 describe("npm metadata", () => {
