@@ -224,12 +224,20 @@ export interface Options {
  * Provides dependency information on dependency changes in a PR
  */
 export default async function yarn(options: Options = {}) {
-  const path = options.pathToPackageJSON ? options.pathToPackageJSON : "package.json"
-  const packageDiff = await danger.git.JSONDiffForFile(path)
+  const allFiles = [...(danger.git.modified_files || []), ...(danger.git.created_files || [])]
 
-  checkForRelease(packageDiff)
-  checkForLockfileDiff(packageDiff)
-  checkForTypesInDeps(packageDiff)
+  const packageJsonFiles = allFiles.filter(file => /(^|\/)package\.json$/.test(file))
+  const paths = options.pathToPackageJSON ? [options.pathToPackageJSON] : packageJsonFiles
 
-  await checkForNewDependencies(packageDiff, options.npmAuthToken)
+  return Promise.all(
+    paths.map(async path => {
+      const packageDiff = await danger.git.JSONDiffForFile(path)
+
+      checkForRelease(packageDiff)
+      checkForLockfileDiff(packageDiff)
+      checkForTypesInDeps(packageDiff)
+
+      await checkForNewDependencies(packageDiff, options.npmAuthToken)
+    })
+  )
 }
