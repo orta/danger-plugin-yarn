@@ -43,7 +43,7 @@
     "date-fns": "^1.28.5",
     "lodash.flatten": "^4.4.0",
     "lodash.includes": "^4.3.0",
-    "node-fetch": "^1.7.1",
+    "node-fetch": "^2.6.1",
     "semver": "^5.4.1"
   },
   "devDependencies": {
