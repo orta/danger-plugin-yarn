@@ -12,6 +12,7 @@ import yarn, {
   checkForRelease,
   checkForTypesInDeps,
   getNPMMetadataForDep,
+  operateOnSingleDiff,
 } from "./index"
 
 declare const global: any
@@ -117,5 +118,63 @@ describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
     const data = await getNPMMetadataForDep("danger")
     expect(data).toMatchSnapshot()
+  })
+})
+
+describe("Feature Flags", () => {
+  it("should skip checkForRelease if options.disableCheckForRelease is provided", async () => {
+    await operateOnSingleDiff({ version: { before: "1.0.0", after: "1.0.1" } }, { disableCheckForRelease: true })
+
+    expect(global.message).toHaveBeenCalledTimes(0)
+    expect(global.warn).toHaveBeenCalledTimes(0)
+    expect(global.fail).toHaveBeenCalledTimes(0)
+    expect(global.markdown).toHaveBeenCalledTimes(0)
+  })
+  it("should skip checkForLockFileDiff if options.disableCheckForLockfileDiff is provided", async () => {
+    global.danger.git = { modified_files: [] }
+    const deps = {
+      dependencies: { before: {}, after: {} },
+    }
+    await operateOnSingleDiff(deps, { disableCheckForLockfileDiff: true })
+
+    expect(global.message).toHaveBeenCalledTimes(0)
+    expect(global.warn).toHaveBeenCalledTimes(0)
+    expect(global.fail).toHaveBeenCalledTimes(0)
+    expect(global.markdown).toHaveBeenCalledTimes(0)
+  })
+  it("should skip checkForTypesInDeps if options.disableCheckForTypesInDeps is provided", async () => {
+    global.danger.git = { modified_files: [] }
+    const deps = {
+      dependencies: {
+        added: ["@types/danger"],
+        before: {},
+        after: {},
+      },
+    }
+    await operateOnSingleDiff(deps, { disableCheckForTypesInDeps: true })
+
+    expect(global.message).toHaveBeenCalledTimes(0)
+    expect(global.warn).toHaveBeenCalledTimes(1) // Called with "Changes were made to package.json, but not "
+    expect(global.fail).toHaveBeenCalledTimes(0)
+  })
+  it("should skip checkForNewDependencies if options.disableCheckForNewDependencies is provided", async () => {
+    global.danger.git = {
+      modified_files: ["package.json"],
+      created_files: ["packages/my-other-package/package.json"],
+      JSONDiffForFile: jest.fn(() => ({
+        dependencies: {
+          before: {},
+          after: {
+            "my-new-dependency": "^1.0.0",
+          },
+        },
+      })),
+    }
+
+    await yarn({ disableCheckForNewDependencies: true })
+
+    expect(global.message).toHaveBeenCalledTimes(0)
+    expect(global.warn).toHaveBeenCalledTimes(2) // Called with "Changes were made to package.json, but not […]"
+    expect(global.fail).toHaveBeenCalledTimes(0)
   })
 })
