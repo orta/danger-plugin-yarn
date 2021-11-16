@@ -32,6 +32,25 @@ Provides 4 separate rules:
 
 And exports a default function to handle all of them at once.
 
+### Feature Flags
+
+If you want to disable any combination of these particular rules, there is a matching `disable*` option flag:
+
+```ts
+  disableCheckForRelease?: boolean
+  disableCheckForNewDependencies?: boolean
+  disableCheckForLockfileDiff?: boolean
+  disableCheckForTypesInDeps?: boolean
+```
+
+Which are used as follows:
+
+```js
+yarn({
+  disableCheckForTypesInDeps: true
+})
+```
+
 ## Private packages
 
 If you want the plugin to find your private packages on npm, you need to provide an npm [authentication token](https://docs.npmjs.com/getting-started/working_with_tokens):

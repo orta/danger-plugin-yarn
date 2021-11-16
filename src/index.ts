@@ -1,5 +1,6 @@
 // Provides dev-time typing structure for  `danger` - doesn't affect runtime.
 import { DangerDSLType } from "../node_modules/danger/distribution/dsl/DangerDSL"
+import { JSONDiff } from "../node_modules/danger/distribution/dsl/GitDSL"
 declare var danger: DangerDSLType
 declare var peril: any | null
 export declare function message(message: string): void
@@ -218,6 +219,27 @@ export const checkForTypesInDeps = packageDiff => {
 export interface Options {
   pathToPackageJSON?: string
   npmAuthToken?: string
+
+  disableCheckForRelease?: boolean
+  disableCheckForNewDependencies?: boolean
+  disableCheckForLockfileDiff?: boolean
+  disableCheckForTypesInDeps?: boolean
+}
+
+export async function operateOnSingleDiff(packageDiff: JSONDiff, options: Options): Promise<void> {
+  if (!options.disableCheckForRelease) {
+    checkForRelease(packageDiff)
+  }
+  if (!options.disableCheckForLockfileDiff) {
+    checkForLockfileDiff(packageDiff)
+  }
+  if (!options.disableCheckForTypesInDeps) {
+    checkForTypesInDeps(packageDiff)
+  }
+
+  if (!options.disableCheckForNewDependencies) {
+    await checkForNewDependencies(packageDiff, options.npmAuthToken)
+  }
 }
 
 /**
@@ -230,14 +252,6 @@ export default async function yarn(options: Options = {}) {
   const paths = options.pathToPackageJSON ? [options.pathToPackageJSON] : packageJsonFiles
 
   return Promise.all(
-    paths.map(async path => {
-      const packageDiff = await danger.git.JSONDiffForFile(path)
-
-      checkForRelease(packageDiff)
-      checkForLockfileDiff(packageDiff)
-      checkForTypesInDeps(packageDiff)
-
-      await checkForNewDependencies(packageDiff, options.npmAuthToken)
-    })
+    paths.map(async path => await operateOnSingleDiff(await danger.git.JSONDiffForFile(path), options))
   )
 }
