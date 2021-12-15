@@ -7,12 +7,12 @@ jest.mock("node-fetch", () => () =>
 )
 
 import yarn, {
+  _operateOnSingleDiff,
+  _renderNPMTable,
   checkForLockfileDiff,
-  checkForNewDependencies,
   checkForRelease,
   checkForTypesInDeps,
   getNPMMetadataForDep,
-  operateOnSingleDiff,
 } from "./index"
 
 declare const global: any
@@ -93,6 +93,8 @@ describe("checkForLockfileDiff", () => {
   })
 
   it("detects changes from multiple package.json files", async () => {
+    expect.assertions(6)
+    global.danger.utils.sentence = (...args) => args.join(", ")
     global.danger.git = {
       modified_files: ["package.json"],
       created_files: ["packages/my-other-package/package.json"],
@@ -102,6 +104,7 @@ describe("checkForLockfileDiff", () => {
           after: {
             "my-new-dependency": "^1.0.0",
           },
+          added: ["my-new-dependency"],
         },
       })),
     }
@@ -111,19 +114,28 @@ describe("checkForLockfileDiff", () => {
     expect(global.warn).toHaveBeenCalledTimes(2)
     expect(global.warn.mock.calls[0][0]).toMatch(/.*Changes were made to package.json.*/)
     expect(global.warn.mock.calls[1][0]).toMatch(/.*Changes were made to package.json.*/)
+    expect(global.markdown).toHaveBeenCalledTimes(2)
+    expect(global.markdown.mock.calls[0][0]).toMatchSnapshot()
+    expect(global.markdown.mock.calls[1][0]).toMatchSnapshot()
   })
 })
 
 describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
-    const data = await getNPMMetadataForDep("danger")
-    expect(data).toMatchSnapshot()
+    expect.assertions(1)
+    const npmData = await getNPMMetadataForDep("danger")
+    expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
   })
 })
 
 describe("Feature Flags", () => {
   it("should skip checkForRelease if options.disableCheckForRelease is provided", async () => {
-    await operateOnSingleDiff({ version: { before: "1.0.0", after: "1.0.1" } }, { disableCheckForRelease: true })
+    await _operateOnSingleDiff(
+      "package.json",
+      { version: { before: "1.0.0", after: "1.0.1" } },
+      {},
+      { disableCheckForRelease: true }
+    )
 
     expect(global.message).toHaveBeenCalledTimes(0)
     expect(global.warn).toHaveBeenCalledTimes(0)
@@ -135,7 +147,7 @@ describe("Feature Flags", () => {
     const deps = {
       dependencies: { before: {}, after: {} },
     }
-    await operateOnSingleDiff(deps, { disableCheckForLockfileDiff: true })
+    await _operateOnSingleDiff("package.json", deps, {}, { disableCheckForLockfileDiff: true })
 
     expect(global.message).toHaveBeenCalledTimes(0)
     expect(global.warn).toHaveBeenCalledTimes(0)
@@ -151,7 +163,7 @@ describe("Feature Flags", () => {
         after: {},
       },
     }
-    await operateOnSingleDiff(deps, { disableCheckForTypesInDeps: true })
+    await _operateOnSingleDiff("package.json", deps, {}, { disableCheckForTypesInDeps: true })
 
     expect(global.message).toHaveBeenCalledTimes(0)
     expect(global.warn).toHaveBeenCalledTimes(1) // Called with "Changes were made to package.json, but not "
