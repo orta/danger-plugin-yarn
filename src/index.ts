@@ -25,7 +25,7 @@ export const checkForRelease = packageDiff => {
   }
 }
 
-interface DepDuplicationCache {
+export interface DepDuplicationCache {
   [depName: string]: {
     packageJSONPaths: string[]
     npmData: PartiallyRenderedNPMMetadata
@@ -133,7 +133,7 @@ const forwardSlashRegex = /(\/+)/g
 const wrappableURLForTextDisplay = (url: string) => (url || "").replace(forwardSlashRegex, `$1<wbr/>`)
 
 /** Represents a label / value, aka 2 cells */
-interface TableDeetNew {
+export interface TableDeetNew {
   /** Label */
   name: string
   /** Value */
@@ -142,18 +142,18 @@ interface TableDeetNew {
   colspan?: number
 }
 /** Represents arbitrary cell contents */
-interface TableDeetFormatted {
+export interface TableDeetFormatted {
   content: string
   colspan?: number
 }
 /** Represents arbitrary cell that will be dynamically replaced on final render */
-interface TableDeetPlaceholder {
+export interface TableDeetPlaceholder {
   placeholderKey: "used-in-packages"
   colspan?: number
 }
-interface TableRowBreak { break: "row-break" }
+export interface TableRowBreak { break: "row-break" }
 
-type TableDeet = TableRowBreak | TableDeetNew | TableDeetFormatted | TableDeetPlaceholder
+export type TableDeet = TableRowBreak | TableDeetNew | TableDeetFormatted | TableDeetPlaceholder
 const isTableDeetPlaceholder = (deet: TableDeet): deet is TableDeetPlaceholder => {
   return "placeholderKey" in deet
 }
@@ -164,7 +164,7 @@ const isTableRowBreak = (deet: TableDeet): deet is TableRowBreak => {
   return "break" in deet
 }
 
-interface PartiallyRenderedNPMMetadata {
+export interface PartiallyRenderedNPMMetadata {
   details: TableDeet[]
   readme: string
 }
@@ -362,7 +362,7 @@ export function _renderNPMTable({
   return `<table>
 ${rowContent.map(row => `<tr>${row}</tr>`).join("\n")}
 </table>
-${readme}}
+${readme}
 `
 }
 
