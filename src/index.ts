@@ -362,7 +362,7 @@ export function _renderNPMTable({
   return `<table>
 ${rowContent.map(row => `<tr>${row}</tr>`).join("\n")}
 </table>
-${readme}}
+${readme}
 `
 }
 
