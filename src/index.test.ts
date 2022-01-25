@@ -72,7 +72,7 @@ describe("checkForTypesInDeps", () => {
 
 describe("checkForLockfileDiff", () => {
   it("does nothing when there's no dependency changes", () => {
-    checkForLockfileDiff({})
+    checkForLockfileDiff("package.json", {})
     expect(global.warn).toHaveBeenCalledTimes(0)
   })
 
@@ -81,14 +81,14 @@ describe("checkForLockfileDiff", () => {
     const deps = {
       dependencies: {},
     }
-    checkForLockfileDiff(deps)
+    checkForLockfileDiff("package.json", deps)
     expect(global.warn).toHaveBeenCalledTimes(1)
   })
 
   it("when there are dependency changes, and a lockfile in modified - do not warn", () => {
     global.danger = { git: { modified_files: ["yarn.lock"] } }
     const deps = { dependencies: {} }
-    checkForLockfileDiff(deps)
+    checkForLockfileDiff("package.json", deps)
     expect(global.warn).toHaveBeenCalledTimes(0)
   })
 
@@ -113,7 +113,7 @@ describe("checkForLockfileDiff", () => {
 
     expect(global.warn).toHaveBeenCalledTimes(2)
     expect(global.warn.mock.calls[0][0]).toMatch(/.*Changes were made to package.json.*/)
-    expect(global.warn.mock.calls[1][0]).toMatch(/.*Changes were made to package.json.*/)
+    expect(global.warn.mock.calls[1][0]).toMatch(/.*Changes were made to packages\/my-other-package\/package.json.*/)
     expect(global.markdown).toHaveBeenCalledTimes(2)
     expect(global.markdown.mock.calls[0][0]).toMatchSnapshot()
     expect(global.markdown.mock.calls[1][0]).toMatchSnapshot()
