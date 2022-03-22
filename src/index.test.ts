@@ -17,6 +17,7 @@ const provideFixture = (fixture: string) => {
 };
 
 const fixtureDangerNpmInfo = provideFixture("danger-npm-info");
+const fixturePinpointNpmInfo = provideFixture("pinpoint-npm-info");
 
 declare const global: any
 beforeEach(() => {
