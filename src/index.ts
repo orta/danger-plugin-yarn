@@ -387,11 +387,12 @@ function renderDepDuplicationCache(cache: DepDuplicationCache) {
 
 // Ensure a lockfile change if deps/devDeps changes, in case
 // someone has only used `npm install` instead of `yarn.
-export const checkForLockfileDiff = packageDiff => {
+export const checkForLockfileDiff = (packagePath, packageDiff) => {
   if (packageDiff.dependencies || packageDiff.devDependencies) {
-    const lockfileChanged = includes(danger.git.modified_files, "yarn.lock")
+    const lockfilePath = packagePath.replace(/package\.json$/, "yarn.lock")
+    const lockfileChanged = includes(danger.git.modified_files, lockfilePath)
     if (!lockfileChanged) {
-      const message = "Changes were made to package.json, but not to yarn.lock."
+      const message = `Changes were made to ${packagePath}, but not to ${lockfilePath}.`
       const idea = "Perhaps you need to run `yarn install`?"
       warn(`${message}<br/><i>${idea}</i>`)
     }
@@ -433,7 +434,7 @@ export async function _operateOnSingleDiff(
     checkForRelease(packageDiff)
   }
   if (!options.disableCheckForLockfileDiff) {
-    checkForLockfileDiff(packageDiff)
+    checkForLockfileDiff(packagePath, packageDiff)
   }
   if (!options.disableCheckForTypesInDeps) {
     checkForTypesInDeps(packageDiff)
