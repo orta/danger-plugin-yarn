@@ -23,6 +23,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "precommit": "lint-staged",
+    "prepare-release": "yarn install && yarn build && yarn version --new-version $APP_VERSION --no-git-tag-version",
     "commit": "git-cz",
     "commitmsg": "validate-commit-msg",
     "build": "tsc",
