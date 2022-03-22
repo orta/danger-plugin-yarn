@@ -1,0 +1,43 @@
+name: NPM Publish
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set version variable
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF#refs/heads/}" = "${GITHUB_REF}" ]]; then
+            APP_VERSION=${GITHUB_REF#refs/tags/}
+          else
+            version=$(git describe --tags --abbrev=0 || echo 0.0.0)
+            subver=${{ github.run_number }}
+            APP_VERSION=$version+b$subver
+          fi
+          echo ::set-output name=version::$APP_VERSION
+          echo "version: [$APP_VERSION]"
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
+      - run: yarn prepare-release
+        env:
+          APP_VERSION: ${{ steps.vars.outputs.version }}
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+# vim:ft=yaml:et:ts=2:sw=2
