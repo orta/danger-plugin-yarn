@@ -4,9 +4,9 @@ import yarn, {
   _operateOnSingleDiff,
   _renderNPMTable,
   checkForLockfileDiff,
+  checkForNewDependencies,
   checkForRelease,
   checkForTypesInDeps,
-  getNPMMetadataForDep,
 } from "./index"
 
 const provideFixture = (fixture: string) => {
@@ -193,5 +193,11 @@ describe("Feature Flags", () => {
     expect(global.message).toHaveBeenCalledTimes(0)
     expect(global.warn).toHaveBeenCalledTimes(2) // Called with "Changes were made to package.json, but not […]"
     expect(global.fail).toHaveBeenCalledTimes(0)
+
+    it("looks through versions if license is missing", async () => {
+    jest.mock("node-fetch", fixturePinpointNpmInfo)
+    const { getNPMMetadataForDep } = require("./")
+    const data = await getNPMMetadataForDep("pinpoint")
+    expect(data).toMatchSnapshot()
   })
 })
