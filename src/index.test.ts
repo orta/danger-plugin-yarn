@@ -126,7 +126,7 @@ describe("checkForLockfileDiff", () => {
 
 describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
-    jest.mock("node-fetch", () => () => fixtureDangerNpmInfo)
+    jest.mock("node-fetch", fixtureDangerNpmInfo)
     expect.assertions(1)
     const npmData = await getNPMMetadataForDep("danger")
     expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
