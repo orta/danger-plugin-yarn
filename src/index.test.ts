@@ -7,6 +7,7 @@ import yarn, {
   checkForNewDependencies,
   checkForRelease,
   checkForTypesInDeps,
+  getNPMMetadataForDep,
 } from "./index"
 
 const provideFixture = (fixture: string) => {
