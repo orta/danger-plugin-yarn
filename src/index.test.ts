@@ -1,10 +1,4 @@
 import * as mockfs from "fs"
-jest.mock("node-fetch", () => () =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
-  })
-)
 
 import yarn, {
   _operateOnSingleDiff,
@@ -21,6 +15,8 @@ const provideFixture = (fixture: string) => {
     json: () => Promise.resolve(JSON.parse(mockfs.readFileSync(`src/fixtures/${fixture}.json`, "utf8"))),
   })
 };
+
+const fixtureDangerNpmInfo = provideFixture("danger-npm-info");
 
 declare const global: any
 beforeEach(() => {
@@ -129,6 +125,7 @@ describe("checkForLockfileDiff", () => {
 
 describe("npm metadata", () => {
   it("Shows a bunch of useful text for a new dep", async () => {
+    jest.mock("node-fetch", () => () => fixtureDangerNpmInfo)
     expect.assertions(1)
     const npmData = await getNPMMetadataForDep("danger")
     expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
