@@ -15,6 +15,13 @@ import yarn, {
   getNPMMetadataForDep,
 } from "./index"
 
+const provideFixture = (fixture: string) => {
+  return () => () => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(JSON.parse(mockfs.readFileSync(`src/fixtures/${fixture}.json`, "utf8"))),
+  })
+};
+
 declare const global: any
 beforeEach(() => {
   global.warn = jest.fn()
