@@ -10,7 +10,7 @@ export declare function markdown(message: string): void
 
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
-import fetch from "node-fetch"
+import * as fetch from "node-fetch"
 import * as semver from "semver"
 
 import * as includesOriginal from "lodash.includes"
