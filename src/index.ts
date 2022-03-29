@@ -10,7 +10,7 @@ export declare function markdown(message: string): void
 
 import * as child_process from "child_process"
 import { distanceInWords } from "date-fns"
-import * as fetch from "node-fetch"
+import fetch from "node-fetch"
 import * as semver from "semver"
 
 import * as includesOriginal from "lodash.includes"
@@ -187,7 +187,7 @@ export const getNPMMetadataForDep = async (
      * Testing on mobile / web, 4-wide tables were too easy to break the viewport bounds.
      */
     const tableDeets: TableDeet[] = []
-    const npm = await npmResponse.json()
+    const npm = (await npmResponse.json()) as any
 
     const homepage = npm.homepage ? npm.homepage : `http://npmjs.com/package/${dep}`
     // Left
