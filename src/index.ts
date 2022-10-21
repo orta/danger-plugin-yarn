@@ -55,6 +55,7 @@ export const checkForNewDependencies = async (
   packagePath: string,
   packageDiff: JSONDiff,
   duplicationCache: DepDuplicationCache,
+  npmRegistryUrl: string,
   npmAuthToken?: string
 ) => {
   const newDependencies = findNewDependencies(packageDiff)
@@ -67,7 +68,7 @@ export const checkForNewDependencies = async (
     }
 
     // Pump out a bunch of metadata information
-    const npm = await getNPMMetadataForDep(dep, npmAuthToken)
+    const npm = await getNPMMetadataForDep(dep, npmRegistryUrl, npmAuthToken)
     if (npm) {
       cacheEntry.npmData.details = npm.details
       cacheEntry.npmData.readme = npm.readme
@@ -171,6 +172,7 @@ export interface PartiallyRenderedNPMMetadata {
 
 export const getNPMMetadataForDep = async (
   dep: string,
+  npmRegistryUrl: string,
   npmAuthToken?: string
 ): Promise<PartiallyRenderedNPMMetadata | undefined> => {
   const sentence = danger.utils.sentence
@@ -179,7 +181,7 @@ export const getNPMMetadataForDep = async (
   const urlDep = encodeURIComponent(dep).replace("%40", "@")
 
   const headers = npmAuthToken ? { Authorization: `Bearer ${npmAuthToken}` } : undefined
-  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, { headers })
+  const npmResponse = await fetch(`${npmRegistryUrl}/${urlDep}`, { headers })
 
   if (npmResponse.ok) {
     /**
@@ -443,7 +445,7 @@ export async function _operateOnSingleDiff(
   }
 
   if (!options.disableCheckForNewDependencies) {
-    await checkForNewDependencies(packagePath, packageDiff, duplicationCache, options.npmAuthToken)
+    await checkForNewDependencies(packagePath, packageDiff, duplicationCache, <string>options.npmRegistryUrl, options.npmAuthToken)
   }
 }
 
@@ -455,6 +457,7 @@ export default async function yarn(options: Options = {}) {
 
   const packageJsonFiles = allFiles.filter(file => /(^|\/)package\.json$/.test(file))
   const paths = options.pathToPackageJSON ? [options.pathToPackageJSON] : packageJsonFiles
+  options.npmRegistryUrl = options.npmRegistryUrl || 'https://registry.npmjs.org';
 
   const depDuplicationCache: DepDuplicationCache = {}
   try {
