@@ -416,6 +416,8 @@ export const checkForTypesInDeps = packageDiff => {
 export interface Options {
   pathToPackageJSON?: string
   npmAuthToken?: string
+  // Defaults to https://registry.npmjs.org
+  npmRegistryUrl?: string
 
   disableCheckForRelease?: boolean
   disableCheckForNewDependencies?: boolean
