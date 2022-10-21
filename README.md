@@ -62,14 +62,6 @@ import yarn from 'danger-plugin-yarn'
 yarn({ npmAuthToken: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' })
 ```
 
-## Changelog
-
-See the GitHub [release history](https://github.com/orta/danger-plugin-yarn/releases).
-
-## Contributing
-
-See [CONTRIBUTING.md](contributing.md).
-
 ## What does this look like?
 
 The rest of this README is the contents of what it looks like when you add this plugin to your Dangerfile:
