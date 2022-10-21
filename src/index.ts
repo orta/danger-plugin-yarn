@@ -55,7 +55,7 @@ export const checkForNewDependencies = async (
   packagePath: string,
   packageDiff: JSONDiff,
   duplicationCache: DepDuplicationCache,
-  npmRegistryUrl: string,
+  npmRegistryUrl?: string,
   npmAuthToken?: string
 ) => {
   const newDependencies = findNewDependencies(packageDiff)
@@ -172,13 +172,14 @@ export interface PartiallyRenderedNPMMetadata {
 
 export const getNPMMetadataForDep = async (
   dep: string,
-  npmRegistryUrl: string,
+  npmRegistryUrl?: string,
   npmAuthToken?: string
 ): Promise<PartiallyRenderedNPMMetadata | undefined> => {
   const sentence = danger.utils.sentence
 
   // Note: NPM can't handle encoded '@'
   const urlDep = encodeURIComponent(dep).replace("%40", "@")
+  npmRegistryUrl = npmRegistryUrl || "https://registry.npmjs.org"
 
   const headers = npmAuthToken ? { Authorization: `Bearer ${npmAuthToken}` } : undefined
   const npmResponse = await fetch(`${npmRegistryUrl}/${urlDep}`, { headers })
@@ -445,7 +446,13 @@ export async function _operateOnSingleDiff(
   }
 
   if (!options.disableCheckForNewDependencies) {
-    await checkForNewDependencies(packagePath, packageDiff, duplicationCache, <string>options.npmRegistryUrl, options.npmAuthToken)
+    await checkForNewDependencies(
+      packagePath,
+      packageDiff,
+      duplicationCache,
+      options.npmRegistryUrl,
+      options.npmAuthToken
+    )
   }
 }
 
@@ -457,7 +464,6 @@ export default async function yarn(options: Options = {}) {
 
   const packageJsonFiles = allFiles.filter(file => /(^|\/)package\.json$/.test(file))
   const paths = options.pathToPackageJSON ? [options.pathToPackageJSON] : packageJsonFiles
-  options.npmRegistryUrl = options.npmRegistryUrl || 'https://registry.npmjs.org';
 
   const depDuplicationCache: DepDuplicationCache = {}
   try {
