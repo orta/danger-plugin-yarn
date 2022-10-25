@@ -55,6 +55,7 @@ export const checkForNewDependencies = async (
   packagePath: string,
   packageDiff: JSONDiff,
   duplicationCache: DepDuplicationCache,
+  npmRegistryUrl?: string,
   npmAuthToken?: string
 ) => {
   const newDependencies = findNewDependencies(packageDiff)
@@ -67,7 +68,7 @@ export const checkForNewDependencies = async (
     }
 
     // Pump out a bunch of metadata information
-    const npm = await getNPMMetadataForDep(dep, npmAuthToken)
+    const npm = await getNPMMetadataForDep(dep, npmRegistryUrl, npmAuthToken)
     if (npm) {
       cacheEntry.npmData.details = npm.details
       cacheEntry.npmData.readme = npm.readme
@@ -171,15 +172,17 @@ export interface PartiallyRenderedNPMMetadata {
 
 export const getNPMMetadataForDep = async (
   dep: string,
+  npmRegistryUrl?: string,
   npmAuthToken?: string
 ): Promise<PartiallyRenderedNPMMetadata | undefined> => {
   const sentence = danger.utils.sentence
 
   // Note: NPM can't handle encoded '@'
   const urlDep = encodeURIComponent(dep).replace("%40", "@")
+  npmRegistryUrl = npmRegistryUrl || "https://registry.npmjs.org"
 
   const headers = npmAuthToken ? { Authorization: `Bearer ${npmAuthToken}` } : undefined
-  const npmResponse = await fetch(`https://registry.npmjs.org/${urlDep}`, { headers })
+  const npmResponse = await fetch(`${npmRegistryUrl}/${urlDep}`, { headers })
 
   if (npmResponse.ok) {
     /**
@@ -416,6 +419,8 @@ export const checkForTypesInDeps = packageDiff => {
 export interface Options {
   pathToPackageJSON?: string
   npmAuthToken?: string
+  // Defaults to https://registry.npmjs.org
+  npmRegistryUrl?: string
 
   disableCheckForRelease?: boolean
   disableCheckForNewDependencies?: boolean
@@ -441,7 +446,13 @@ export async function _operateOnSingleDiff(
   }
 
   if (!options.disableCheckForNewDependencies) {
-    await checkForNewDependencies(packagePath, packageDiff, duplicationCache, options.npmAuthToken)
+    await checkForNewDependencies(
+      packagePath,
+      packageDiff,
+      duplicationCache,
+      options.npmRegistryUrl,
+      options.npmAuthToken
+    )
   }
 }
 
