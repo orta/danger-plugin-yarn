@@ -62,6 +62,18 @@ import yarn from 'danger-plugin-yarn'
 yarn({ npmAuthToken: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' })
 ```
 
+
+## Specify registry URL
+
+If you want the plugin to use different registry than `registry.npmjs.org`:
+
+```js
+// dangerfile.js
+import yarn from 'danger-plugin-yarn'
+
+yarn({ npmRegistryUrl: 'https://registry.yarnpkg.com' })
+```
+
 ## What does this look like?
 
 The rest of this README is the contents of what it looks like when you add this plugin to your Dangerfile:
