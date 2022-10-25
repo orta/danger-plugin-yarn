@@ -62,6 +62,7 @@ import yarn from 'danger-plugin-yarn'
 yarn({ npmAuthToken: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' })
 ```
 
+
 ## Specify registry URL
 
 If you want the plugin to use different registry than `registry.npmjs.org`:
@@ -72,14 +73,6 @@ import yarn from 'danger-plugin-yarn'
 
 yarn({ npmRegistryUrl: 'https://registry.yarnpkg.com' })
 ```
-
-## Changelog
-
-See the GitHub [release history](https://github.com/orta/danger-plugin-yarn/releases).
-
-## Contributing
-
-See [CONTRIBUTING.md](contributing.md).
 
 ## What does this look like?
 
