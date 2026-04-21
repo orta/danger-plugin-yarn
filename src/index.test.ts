@@ -15,6 +15,9 @@ import yarn, {
   getNPMMetadataForDep,
 } from "./index"
 
+const RealDate = Date
+const FIXED_NOW = "2022-04-21T00:00:00.000Z"
+
 declare const global: any
 beforeEach(() => {
   global.warn = jest.fn()
@@ -22,6 +25,19 @@ beforeEach(() => {
   global.fail = jest.fn()
   global.markdown = jest.fn()
   global.danger = { utils: { sentence: jest.fn() } }
+  global.Date = class extends RealDate {
+    static now() {
+      return new RealDate(FIXED_NOW).getTime()
+    }
+
+    constructor(value?: any) {
+      if (arguments.length) {
+        super(value)
+      } else {
+        super(FIXED_NOW)
+      }
+    }
+  }
 })
 
 afterEach(() => {
@@ -29,6 +45,7 @@ afterEach(() => {
   global.message = undefined
   global.fail = undefined
   global.markdown = undefined
+  global.Date = RealDate
 })
 
 describe("checkForRelease", () => {
