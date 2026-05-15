@@ -1,4 +1,5 @@
 import * as mockfs from "fs"
+import * as child_process from "child_process"
 jest.mock("node-fetch", () => () =>
   Promise.resolve({
     ok: true,
@@ -13,15 +14,35 @@ import yarn, {
   checkForRelease,
   checkForTypesInDeps,
   getNPMMetadataForDep,
+  getYarnMetadataForDep,
 } from "./index"
 
 declare const global: any
+const RealDate = Date
+const fixedDateISOString = "2022-05-15T00:00:00.000Z"
+class MockDate extends RealDate {
+  constructor(...args) {
+    if (args.length === 0) {
+      super(fixedDateISOString)
+    } else {
+      super(...args)
+    }
+  }
+  static now() {
+    return new RealDate(fixedDateISOString).getTime()
+  }
+}
 beforeEach(() => {
   global.warn = jest.fn()
   global.message = jest.fn()
   global.fail = jest.fn()
   global.markdown = jest.fn()
   global.danger = { utils: { sentence: jest.fn() } }
+  global.Date = MockDate
+  jest.spyOn(child_process, "execFile").mockImplementation(((file, args, callback) => {
+    callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":""}`, "")
+    return {} as any
+  }) as any)
 })
 
 afterEach(() => {
@@ -29,6 +50,11 @@ afterEach(() => {
   global.message = undefined
   global.fail = undefined
   global.markdown = undefined
+  global.Date = RealDate
+  const execFileSpy = child_process.execFile as any
+  if (execFileSpy.mockRestore) {
+    execFileSpy.mockRestore()
+  }
 })
 
 describe("checkForRelease", () => {
@@ -125,6 +151,29 @@ describe("npm metadata", () => {
     expect.assertions(1)
     const npmData = await getNPMMetadataForDep("danger")
     expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
+  })
+})
+
+describe("yarn metadata", () => {
+  it("passes dependency names to yarn why without using a shell command string", async () => {
+    const dep = "danger'; touch SUCCESS; #"
+    const execFileSpy = child_process.execFile as any
+    execFileSpy.mockClear()
+    execFileSpy.mockImplementation(((file, args, callback) => {
+      expect(file).toBe(process.platform === "win32" ? "yarn.cmd" : "yarn")
+      expect(args).toEqual(["why", dep, "--json"])
+      callback(
+        null,
+        `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":"Found why output"}`,
+        ""
+      )
+      return {} as any
+    }) as any)
+
+    const result = await getYarnMetadataForDep(dep)
+
+    expect(execFileSpy).toHaveBeenCalledTimes(1)
+    expect(result).toContain("Found why output")
   })
 })
 
