@@ -1,5 +1,5 @@
-import * as mockfs from "fs"
 import * as child_process from "child_process"
+import * as mockfs from "fs"
 jest.mock("node-fetch", () => () =>
   Promise.resolve({
     ok: true,
@@ -17,32 +17,35 @@ import yarn, {
   getYarnMetadataForDep,
 } from "./index"
 
-declare const global: any
 const RealDate = Date
-const fixedDateISOString = "2022-05-15T00:00:00.000Z"
-class MockDate extends RealDate {
-  constructor(...args) {
-    if (args.length === 0) {
-      super(fixedDateISOString)
-    } else {
-      super(...args)
-    }
-  }
-  static now() {
-    return new RealDate(fixedDateISOString).getTime()
-  }
-}
+const FIXED_NOW = "2022-04-21T00:00:00.000Z"
+
+declare const global: any
 beforeEach(() => {
   global.warn = jest.fn()
   global.message = jest.fn()
   global.fail = jest.fn()
   global.markdown = jest.fn()
   global.danger = { utils: { sentence: jest.fn() } }
-  global.Date = MockDate
-  jest.spyOn(child_process, "execFile").mockImplementation(((file, args, callback) => {
-    callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":""}`, "")
-    return {} as any
-  }) as any)
+  global.Date = class extends RealDate {
+    static now() {
+      return new RealDate(FIXED_NOW).getTime()
+    }
+
+    constructor(value?: any) {
+      if (arguments.length) {
+        super(value)
+      } else {
+        super(FIXED_NOW)
+      }
+    }
+  }
+  jest.spyOn(child_process, "execFile").mockImplementation(
+    ((file, args, callback) => {
+      callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":""}`, "")
+      return {} as any
+    }) as any
+  )
 })
 
 afterEach(() => {
@@ -159,16 +162,14 @@ describe("yarn metadata", () => {
     const dep = "danger'; touch SUCCESS; #"
     const execFileSpy = child_process.execFile as any
     execFileSpy.mockClear()
-    execFileSpy.mockImplementation(((file, args, callback) => {
-      expect(file).toBe(process.platform === "win32" ? "yarn.cmd" : "yarn")
-      expect(args).toEqual(["why", dep, "--json"])
-      callback(
-        null,
-        `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":"Found why output"}`,
-        ""
-      )
-      return {} as any
-    }) as any)
+    execFileSpy.mockImplementation(
+      ((file, args, callback) => {
+        expect(file).toBe(process.platform === "win32" ? "yarn.cmd" : "yarn")
+        expect(args).toEqual(["why", dep, "--json"])
+        callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":"Found why output"}`, "")
+        return {} as any
+      }) as any
+    )
 
     const result = await getYarnMetadataForDep(dep)
 
