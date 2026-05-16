@@ -99,7 +99,8 @@ export const findNewDependencies = (packageDiff: JSONDiff) => {
 
 export const getYarnMetadataForDep = async dep => {
   return new Promise<string>(resolve => {
-    child_process.exec(`yarn why '${dep}' --json`, (err, output) => {
+    const yarnExecutable = process.platform === "win32" ? "yarn.cmd" : "yarn"
+    child_process.execFile(yarnExecutable, ["why", dep, "--json"], (err, output) => {
       if (output) {
         // Comes as a series of little JSON messages
         const usefulJSONContents = output.toString().split(`{"type":"activityEnd","data":{"id":0}}`).pop() as string

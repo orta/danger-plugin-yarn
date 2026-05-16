@@ -1,3 +1,4 @@
+import * as child_process from "child_process"
 import * as mockfs from "fs"
 jest.mock("node-fetch", () => () =>
   Promise.resolve({
@@ -13,6 +14,7 @@ import yarn, {
   checkForRelease,
   checkForTypesInDeps,
   getNPMMetadataForDep,
+  getYarnMetadataForDep,
 } from "./index"
 
 const RealDate = Date
@@ -38,6 +40,12 @@ beforeEach(() => {
       }
     }
   }
+  jest.spyOn(child_process, "execFile").mockImplementation(
+    ((file, args, callback) => {
+      callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":""}`, "")
+      return {} as any
+    }) as any
+  )
 })
 
 afterEach(() => {
@@ -46,6 +54,10 @@ afterEach(() => {
   global.fail = undefined
   global.markdown = undefined
   global.Date = RealDate
+  const execFileSpy = child_process.execFile as any
+  if (execFileSpy.mockRestore) {
+    execFileSpy.mockRestore()
+  }
 })
 
 describe("checkForRelease", () => {
@@ -142,6 +154,27 @@ describe("npm metadata", () => {
     expect.assertions(1)
     const npmData = await getNPMMetadataForDep("danger")
     expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
+  })
+})
+
+describe("yarn metadata", () => {
+  it("passes dependency names to yarn why without using a shell command string", async () => {
+    const dep = "danger'; touch SUCCESS; #"
+    const execFileSpy = child_process.execFile as any
+    execFileSpy.mockClear()
+    execFileSpy.mockImplementation(
+      ((file, args, callback) => {
+        expect(file).toBe(process.platform === "win32" ? "yarn.cmd" : "yarn")
+        expect(args).toEqual(["why", dep, "--json"])
+        callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":"Found why output"}`, "")
+        return {} as any
+      }) as any
+    )
+
+    const result = await getYarnMetadataForDep(dep)
+
+    expect(execFileSpy).toHaveBeenCalledTimes(1)
+    expect(result).toContain("Found why output")
   })
 })
 
