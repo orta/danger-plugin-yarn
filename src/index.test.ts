@@ -1,11 +1,23 @@
 import * as child_process from "child_process"
 import * as mockfs from "fs"
-jest.mock("node-fetch", () => () =>
-  Promise.resolve({
+jest.mock("node-fetch", () => (url: string) => {
+  const readFixture = (requestUrl: string) => {
+    const dep = requestUrl.split("/").pop() || "danger"
+    const fixturePath = `src/fixtures/${dep}-npm-info.json`
+    const fallbackFixturePath = "src/fixtures/danger-npm-info.json"
+
+    try {
+      return JSON.parse(mockfs.readFileSync(fixturePath, "utf8"))
+    } catch (error) {
+      return JSON.parse(mockfs.readFileSync(fallbackFixturePath, "utf8"))
+    }
+  }
+
+  return Promise.resolve({
     ok: true,
-    json: () => Promise.resolve(JSON.parse(mockfs.readFileSync("src/fixtures/danger-npm-info.json", "utf8"))),
+    json: () => Promise.resolve(readFixture(url)),
   })
-)
+})
 
 import yarn, {
   _operateOnSingleDiff,
@@ -154,6 +166,15 @@ describe("npm metadata", () => {
     expect.assertions(1)
     const npmData = await getNPMMetadataForDep("danger")
     expect(_renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })).toMatchSnapshot()
+  })
+
+  it("Shows a version license when top-level license is missing", async () => {
+    expect.assertions(2)
+    const npmData = await getNPMMetadataForDep("pinpoint")
+    const rendered = _renderNPMTable({ usedInPackageJSONPaths: ["package.json"], npmData: npmData! })
+
+    expect(rendered).toContain("<b>License:</b> <wbr/>MIT")
+    expect(rendered).not.toContain("<b>NO LICENSE FOUND</b>")
   })
 })
 
