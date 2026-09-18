@@ -171,6 +171,27 @@ export interface PartiallyRenderedNPMMetadata {
   readme: string
 }
 
+const resolvePackageLicense = (npm: any): string | undefined => {
+  if (npm.license) {
+    return npm.license
+  }
+
+  if (!npm.versions) {
+    return undefined
+  }
+
+  const versionsWithLicenses = Object.keys(npm.versions).filter(version => semver.valid(version)).sort(semver.rcompare)
+
+  for (const version of versionsWithLicenses) {
+    const versionMetadata = npm.versions[version]
+    if (versionMetadata && versionMetadata.license) {
+      return versionMetadata.license
+    }
+  }
+
+  return undefined
+}
+
 export const getNPMMetadataForDep = async (
   dep: string,
   npmRegistryUrl?: string,
@@ -209,7 +230,7 @@ export const getNPMMetadataForDep = async (
     tableDeets.push({ break: "row-break" })
 
     // Left
-    const license = npm.license
+    const license = resolvePackageLicense(npm)
     if (license) {
       tableDeets.push({ name: "License", message: license })
     } else {
