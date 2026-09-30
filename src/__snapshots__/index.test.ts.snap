@@ -243,7 +243,7 @@ We try to keep as much discussion as possible in GitHub issues, but also have a 
 
   <details>
     <summary><code>yarn why my-new-dependency</code> output</summary>
-    <ul><li><code>
+    <ul><li><code>=&gt; Found \\"my-new-dependency@1.0.0\\"</code></li><li><code>This module exists because it's specified in \\"dependencies\\".</code></li><li><code>Disk size without dependencies: \\"72KB\\"
     </code></li></ul>
   </details>
   "

@@ -76,16 +76,19 @@ export const checkForNewDependencies = async (
       warn(`Could not get info from npm on ${safeLink(dep)}</a>`)
     }
 
-    if ("undefined" === typeof peril) {
+    if (!isRunningOnPeril()) {
       const yarn = await getYarnMetadataForDep(dep)
-      if (yarn && yarn.length) {
+      if (yarn) {
         cacheEntry.yarnBody = yarn
-      } else if (dep) {
+      } else if (yarn === "") {
         warn(`Could not get info from yarn on ${safeLink(dep)}`)
       }
     }
   }
 }
+
+// Peril runs without a checkout of the repository. Danger defines `peril` as `{}`; only Peril provides `runTask`.
+const isRunningOnPeril = () => typeof peril !== "undefined" && !!peril && typeof peril.runTask === "function"
 
 export const findNewDependencies = (packageDiff: JSONDiff) => {
   const added = [] as string[]
@@ -97,30 +100,67 @@ export const findNewDependencies = (packageDiff: JSONDiff) => {
   return added
 }
 
-export const getYarnMetadataForDep = async dep => {
-  return new Promise<string>(resolve => {
+/**
+ * Resolves the rendered `yarn why` output, an empty string when yarn has no record of `dep`,
+ * or `undefined` when yarn can't run in this checkout (not installed, no lockfile, mismatched Yarn version).
+ */
+export const getYarnMetadataForDep = async (dep: string) => {
+  return new Promise<string | undefined>(resolve => {
     const yarnExecutable = process.platform === "win32" ? "yarn.cmd" : "yarn"
-    child_process.execFile(yarnExecutable, ["why", dep, "--json"], (err, output) => {
-      if (output) {
-        // Comes as a series of little JSON messages
-        const usefulJSONContents = output.toString().split(`{"type":"activityEnd","data":{"id":0}}`).pop() as string
-        const asJSON = usefulJSONContents.split("}\n{").join("},{")
-
-        const whyJSON = JSON.parse(`[${asJSON}]`)
-        const messages = whyJSON.filter(msg => typeof msg.data === "string").map(m => m.data)
+    try {
+      child_process.execFile(yarnExecutable, ["why", dep, "--json"], (err, output) => {
+        if (err) {
+          resolve(undefined)
+          return
+        }
+        const messages = parseYarnWhyMessages(String(output || ""))
+        if (!messages.length) {
+          resolve("")
+          return
+        }
         resolve(`
   <details>
     <summary><code>yarn why ${printDep(dep)}</code> output</summary>
-    <ul><li><code>${messages.join("</code></li><li><code>")}
+    <ul><li><code>${messages.map(escapeHTML).join("</code></li><li><code>")}
     </code></li></ul>
   </details>
   `)
-      } else {
-        resolve("")
-      }
-    })
+      })
+    } catch (e) {
+      // Node refuses to spawn a Windows `.cmd` file without a shell
+      resolve(undefined)
+    }
   })
 }
+
+// Yarn 1 prints one event per line; Yarn 2+ prints one dependent per line, keyed by the packages it pulls in.
+const parseYarnWhyMessages = (output: string): string[] => {
+  const messages: string[] = []
+  for (const line of output.split(/\r?\n/)) {
+    let event: any
+    try {
+      event = JSON.parse(line)
+    } catch (e) {
+      continue
+    }
+    if (!event) {
+      continue
+    }
+    if (event.type === "info" && typeof event.data === "string") {
+      messages.push(event.data)
+    } else if (event.type === "list" && event.data && Array.isArray(event.data.items)) {
+      messages.push(...event.data.items.filter(item => typeof item === "string"))
+    } else if (typeof event.value === "string" && event.children) {
+      for (const locator of Object.keys(event.children)) {
+        const descriptor = (event.children[locator] || {}).descriptor || locator
+        messages.push(`"${event.value}" depends on "${descriptor}"`)
+      }
+    }
+  }
+  return messages.map(msg => msg.trim()).filter(msg => msg.length)
+}
+
+const escapeHTML = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
 const safeLink = (name: string) => `<a href='${linkToNPM(name)}'><code>${printDep(name)}</code></a>`
 const printDep = (name: string) => name.replace(/@/, "&#64;")
