@@ -32,6 +32,26 @@ import yarn, {
 const RealDate = Date
 const FIXED_NOW = "2022-04-21T00:00:00.000Z"
 
+const yarnClassicWhyOutput = [
+  `{"type":"step","data":{"message":"Why do we have the module \\"my-new-dependency\\"?","current":1,"total":4}}`,
+  `{"type":"step","data":{"message":"Initialising dependency graph","current":2,"total":4}}`,
+  `{"type":"warning","data":"my-new-dependency@1.0.0: this package is deprecated"}`,
+  `{"type":"step","data":{"message":"Finding dependency","current":3,"total":4}}`,
+  `{"type":"step","data":{"message":"Calculating file sizes","current":4,"total":4}}`,
+  `{"type":"info","data":"\\r=> Found \\"my-new-dependency@1.0.0\\""}`,
+  `{"type":"info","data":"This module exists because it's specified in \\"dependencies\\"."}`,
+  `{"type":"info","data":"Disk size without dependencies: \\"72KB\\""}`,
+  "",
+].join("\n")
+
+const mockYarnWhy = (err: any, output: string) => {
+  const implementation = (file, args, callback) => {
+    callback(err, output, "")
+    return {} as any
+  }
+  return jest.spyOn(child_process, "execFile").mockImplementation(implementation as any)
+}
+
 declare const global: any
 beforeEach(() => {
   global.warn = jest.fn()
@@ -52,12 +72,7 @@ beforeEach(() => {
       }
     }
   }
-  jest.spyOn(child_process, "execFile").mockImplementation(
-    ((file, args, callback) => {
-      callback(null, `{"type":"activityEnd","data":{"id":0}}\n{"type":"info","data":""}`, "")
-      return {} as any
-    }) as any
-  )
+  mockYarnWhy(null, yarnClassicWhyOutput)
 })
 
 afterEach(() => {
@@ -65,6 +80,7 @@ afterEach(() => {
   global.message = undefined
   global.fail = undefined
   global.markdown = undefined
+  global.peril = undefined
   global.Date = RealDate
   const execFileSpy = child_process.execFile as any
   if (execFileSpy.mockRestore) {
@@ -196,6 +212,186 @@ describe("yarn metadata", () => {
 
     expect(execFileSpy).toHaveBeenCalledTimes(1)
     expect(result).toContain("Found why output")
+  })
+
+  it("renders the info lines from Yarn 1", async () => {
+    const result = await getYarnMetadataForDep("my-new-dependency")
+
+    expect(result).toContain(`<li><code>=&gt; Found "my-new-dependency@1.0.0"</code></li>`)
+    expect(result).toContain(`<li><code>This module exists because it's specified in "dependencies".</code></li>`)
+    expect(result).not.toContain("deprecated")
+    expect(result).not.toContain("Calculating file sizes")
+  })
+
+  it("renders the reasons list from Yarn 1", async () => {
+    const output = [
+      `{"type":"info","data":"Reasons this module exists"}`,
+      JSON.stringify({
+        type: "list",
+        data: { type: "reasons", items: [`Specified in "dependencies"`, `Hoisted from "other#my-new-dependency"`] },
+      }),
+      "",
+    ].join("\n")
+    mockYarnWhy(null, output)
+
+    const result = await getYarnMetadataForDep("my-new-dependency")
+
+    expect(result).toContain(`<li><code>Specified in "dependencies"</code></li>`)
+    expect(result).toContain(`<li><code>Hoisted from "other#my-new-dependency"`)
+  })
+
+  it("renders the dependents reported by Yarn 2+", async () => {
+    const output = [
+      JSON.stringify({
+        value: "app@workspace:.",
+        children: {
+          "my-new-dependency@npm:1.0.0": {
+            locator: "my-new-dependency@npm:1.0.0",
+            descriptor: "my-new-dependency@npm:>=1 <2",
+          },
+        },
+      }),
+      JSON.stringify({
+        value: "other@npm:3.0.1",
+        children: {
+          "my-new-dependency@npm:1.0.0": {
+            locator: "my-new-dependency@npm:1.0.0",
+            descriptor: "my-new-dependency@npm:^1.0.0",
+          },
+        },
+      }),
+      "",
+    ].join("\n")
+    mockYarnWhy(null, output)
+
+    const result = await getYarnMetadataForDep("my-new-dependency")
+
+    expect(result).toContain(`<li><code>"app@workspace:." depends on "my-new-dependency@npm:&gt;=1 &lt;2"</code></li>`)
+    expect(result).toContain(`<li><code>"other@npm:3.0.1" depends on "my-new-dependency@npm:^1.0.0"`)
+  })
+
+  it("resolves an empty string when Yarn 1 has no match for the dependency", async () => {
+    const output = [
+      `{"type":"step","data":{"message":"Why do we have the module \\"my-new-dependency\\"?","current":1,"total":4}}`,
+      `{"type":"step","data":{"message":"Initialising dependency graph","current":2,"total":4}}`,
+      `{"type":"step","data":{"message":"Finding dependency","current":3,"total":4}}`,
+      "",
+    ].join("\n")
+    mockYarnWhy(null, output)
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBe("")
+  })
+
+  it("resolves an empty string when Yarn 2+ has no match for the dependency", async () => {
+    mockYarnWhy(null, "")
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBe("")
+  })
+
+  it("resolves undefined when yarn is not installed", async () => {
+    mockYarnWhy(Object.assign(new Error("spawn yarn ENOENT"), { code: "ENOENT" }), "")
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBeUndefined()
+  })
+
+  it("resolves undefined when there is no yarn.lock", async () => {
+    const output = [
+      `{"type":"error","data":"No lockfile in this directory. Run \`yarn install\` to generate one."}`,
+      `{"type":"info","data":"Visit https://yarnpkg.com/en/docs/cli/why for documentation about this command."}`,
+      "",
+    ].join("\n")
+    mockYarnWhy(Object.assign(new Error("Command failed"), { code: 1 }), output)
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBeUndefined()
+  })
+
+  it("resolves undefined when the project pins a different Yarn version", async () => {
+    const output = [
+      JSON.stringify({
+        type: "error",
+        data:
+          `This project's package.json defines "packageManager": "yarn@4.18.1". ` +
+            "However the current global version of Yarn is 1.22.22.",
+      }),
+      "",
+      `Presence of the "packageManager" field indicates that the project is meant to be used with Corepack.`,
+      "",
+    ].join("\n")
+    mockYarnWhy(Object.assign(new Error("Command failed"), { code: 1 }), output)
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBeUndefined()
+  })
+
+  it("resolves undefined when yarn cannot be spawned", async () => {
+    jest.spyOn(child_process, "execFile").mockImplementation(() => {
+      throw Object.assign(new Error("spawn EINVAL"), { code: "EINVAL" })
+    })
+
+    expect(await getYarnMetadataForDep("my-new-dependency")).toBeUndefined()
+  })
+})
+
+describe("checkForNewDependencies yarn why", () => {
+  const addDependency = () => {
+    global.danger.utils.sentence = (...args) => args.join(", ")
+    global.danger.git = {
+      modified_files: ["package.json", "yarn.lock"],
+      created_files: [],
+      JSONDiffForFile: jest.fn(() => ({
+        dependencies: {
+          before: {},
+          after: { "my-new-dependency": "^1.0.0" },
+          added: ["my-new-dependency"],
+        },
+      })),
+    }
+  }
+
+  it("runs yarn why under Danger, which defines peril as an empty object", async () => {
+    global.peril = {}
+    addDependency()
+
+    await yarn()
+
+    expect(child_process.execFile).toHaveBeenCalledTimes(1)
+    expect(global.warn).toHaveBeenCalledTimes(0)
+    const rendered = global.markdown.mock.calls[1][0]
+    expect(rendered).toContain("<summary><code>yarn why my-new-dependency</code> output</summary>")
+    expect(rendered).toContain(`<li><code>=&gt; Found "my-new-dependency@1.0.0"</code></li>`)
+  })
+
+  it("skips yarn why under Peril", async () => {
+    global.peril = { env: {}, runTask: jest.fn() }
+    addDependency()
+
+    await yarn()
+
+    expect(child_process.execFile).toHaveBeenCalledTimes(0)
+    expect(global.warn).toHaveBeenCalledTimes(0)
+    expect(global.markdown.mock.calls[1][0]).not.toContain("yarn why")
+  })
+
+  it("warns when yarn has no match for the dependency", async () => {
+    global.peril = {}
+    addDependency()
+    mockYarnWhy(null, "")
+
+    await yarn()
+
+    expect(global.warn).toHaveBeenCalledTimes(1)
+    expect(global.warn.mock.calls[0][0]).toMatch(/Could not get info from yarn/)
+    expect(global.markdown.mock.calls[1][0]).not.toContain("yarn why")
+  })
+
+  it("stays silent when yarn cannot run in this checkout", async () => {
+    global.peril = {}
+    addDependency()
+    mockYarnWhy(Object.assign(new Error("spawn yarn ENOENT"), { code: "ENOENT" }), "")
+
+    await yarn()
+
+    expect(global.warn).toHaveBeenCalledTimes(0)
+    expect(global.markdown.mock.calls[1][0]).not.toContain("yarn why")
   })
 })
 
